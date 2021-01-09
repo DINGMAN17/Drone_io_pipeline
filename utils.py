@@ -17,8 +17,8 @@ def create_image_list(folder_path=None, file_type='.png'):
     file_type : type of image file
                 The default is '.jpg'
     '''   
-    path = "C:/Users/cryst/Study/Thesis/images" #for testing
-    #path = folder_path 
+    #path = "C:/Users/cryst/Study/Thesis/images" #for testing
+    path = folder_path 
     file_type = file_type            
         
     with open('ss_test_img_list.txt', 'w') as file:
@@ -26,5 +26,4 @@ def create_image_list(folder_path=None, file_type='.png'):
 
     return os.path.abspath('ss_test_img_list.txt')
 
-create_image_list()
 
