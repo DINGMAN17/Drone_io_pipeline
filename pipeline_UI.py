@@ -15,9 +15,21 @@ class Setting:
         self.root.title(' ML settings ')
         self.init_gui()
         
-    def uploadAction(self, even=None):
-        self.ss_folder_path = filedialog.askdirectory()
-        return self.ss_folder_path
+    def get_ss_folder(self, even=None):
+        self.ss_dir = filedialog.askdirectory()
+        return self.ss_dir
+    
+    def get_ds_folder(self, even=None):
+        self.ds_dir = filedialog.askdirectory()
+        return self.ds_dir
+    
+    def get_multiple_folder(self):
+        self.c_dirs = []
+        while True:
+            folder = filedialog.askdirectory()
+            if not folder:
+                break
+            self.c_dirs.append(folder)        
     
     def create_top_frame(self):
         self.top_frame = tk.Frame(self.root, relief=tk.SUNKEN, borderwidth=1)
@@ -29,8 +41,12 @@ class Setting:
         inf_title = tk.Label(inf_frame, text='Inference setting')
         inf_title.configure(font='Arial 15')
         inf_title.grid(row=0, columnspan=7)
-        ss_upload_button = tk.Button(inf_frame, text='choose test image folder', command=self.uploadAction)
-        ss_upload_button.grid(row=1, column=3, columnspan=5)
+        ss_dir_button = tk.Button(inf_frame, text='choose test image folder', command=self.get_ss_folder)
+        ss_dir_button.grid(row=1, column=3, columnspan=5)
+        
+        c_dirs_button = tk.Button(inf_frame, text='choose test image folders', command=self.get_multiple_folder)
+        c_dirs_button.grid(row=2, column=3, columnspan=5)        
+        
 
     def create_training_frame(self):
         pass
@@ -48,4 +64,4 @@ if __name__ == '__main__':
     root = tk.Tk()
     s = Setting(root)
     root.mainloop()
-    #print(s.ss_folder_path)
+    print(s.c_dirs)

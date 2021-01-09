@@ -6,7 +6,7 @@ Created on Sat Jan  9 17:52:52 2021
 """
 import tkinter as tk
 from pipeline_UI import Setting
-from utils import create_image_list
+from utils import create_image_list, create_folder_list
 
 class Run():
     
@@ -24,7 +24,8 @@ class Run():
         Get parameters from GUI
 
         '''
-        self.ss_folder = self.setting.ss_folder_path
+        self.ss_folder = self.setting.ss_dir
+        self.c_dirs = self.setting.c_dirs
     
     def inference_ss(self):
         '''
@@ -32,13 +33,15 @@ class Run():
         - purpose: identify strucural elements and mask windows
         '''
         ss_test_imgs = create_image_list(self.ss_folder)
+        print(ss_test_imgs)
     
     def inference_c(self):
         '''
         Run inference on defect classification model. 
         - purpose: identify crack, spalling (Delamination)
         '''
-        pass
+        c_dirs = create_folder_list(self.c_dirs)
+        print(c_dirs)
     
     def inference_ds(self):
         '''
@@ -67,6 +70,7 @@ class Run():
 def main():
     r = Run()
     r.inference_ss()
+    r.inference_c()
 
 if __name__ == '__main__':
     main()
