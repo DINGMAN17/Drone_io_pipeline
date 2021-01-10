@@ -5,6 +5,7 @@ Created on Sat Jan  9 17:52:52 2021
 @author: cryst
 """
 import tkinter as tk
+import subprocess
 from pipeline_UI import Setting
 from utils import create_image_list, create_folder_list
 
@@ -29,6 +30,9 @@ class Run():
         self.ss_folder = self.setting.ss_dir
         self.dc_dirs = self.setting.c_dirs
         self.ds_folder = self.setting.ds_dir
+        self.ss_out_dir = self.setting.ss_out_dir
+        self.dc_out_dir = self.setting.dc_out_dir
+        self.ds_out_dir = self.setting.ds_out_dir
         
     def training(self):
         #TODO: consider running in parallel
@@ -74,7 +78,9 @@ class Run():
         Run inference on semantic segmentation model.
         - purpose: identify strucural elements and mask windows
         '''
+        #TODO: excute terminal command for ss
         ss_txt = create_image_list(self.ss_folder, 'ss')
+        # e.g.  subprocess.run(["raspistill", "-o", filename])
         #print(ss_txt)
     
     def inference_dc(self):
@@ -82,6 +88,7 @@ class Run():
         Run inference on defect classification model. 
         - purpose: identify crack, spalling (Delamination)
         '''
+        #TODO: excute terminal command for dc
         dc_txt = create_folder_list(self.dc_dirs)
         #print(dc_txt)
     
@@ -90,6 +97,7 @@ class Run():
         Run inference on defect segmentation model. 
         - purpose: identify Spalling, Efflorescence, Rust
         '''
+        #TODO: excute terminal command for ds
         ds_txt = create_image_list(self.ds_folder, 'ds')
         #print(ds_txt)
     
