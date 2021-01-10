@@ -6,7 +6,7 @@ Created on Sat Jan  9 16:21:46 2021
 """
 import os
 
-def create_image_list(folder_path=None, file_type='.png'):
+def create_image_list(folder_path=None, model=None, file_type='.png'):
     '''
     create a txt file which contains the absolute path of all test images.
     the txt file will be fed into semantic/defect segmentation model.
@@ -23,12 +23,13 @@ def create_image_list(folder_path=None, file_type='.png'):
     '''   
     #path = "C:/Users/cryst/Study/Thesis/images" #for testing
     path = folder_path 
-    file_type = file_type            
+    file_type = file_type
+    filename = model + '_test_img_list.txt'            
         
-    with open('ss_test_img_list.txt', 'w') as file:
+    with open(filename, 'w') as file:
         file.writelines([path + '/' + f +'\n' for f in os.listdir(path) if f.endswith(file_type)])
 
-    return os.path.abspath('ss_test_img_list.txt')
+    return os.path.abspath(filename)
 
 def create_folder_list(dirs=None):
     '''
@@ -45,10 +46,6 @@ def create_folder_list(dirs=None):
     absolute path of the txt file, str
 
     '''
-    
-    # dirs = ['C:/Users/cryst/Study/Thesis/Raspi-IoT-SHM-main/CNN model', 
-    #         'C:/Users/cryst/Study/Thesis/Raspi-IoT-SHM-main/real_images', 
-    #         'C:/Users/cryst/Study/Thesis/Raspi-IoT-SHM-main/templates']
     
     dirs = dirs
 
