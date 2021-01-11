@@ -4,8 +4,9 @@ Created on Sat Jan  9 17:52:52 2021
 
 @author: cryst
 """
+import os
 import tkinter as tk
-import subprocess
+from subprocess import PIPE, Popen
 from pipeline_UI import Setting
 from utils import create_image_list, create_folder_list
 
@@ -80,8 +81,12 @@ class Run():
         '''
         #TODO: excute terminal command for ss
         ss_txt = create_image_list(self.ss_folder, 'ss')
-        # e.g.  subprocess.run(["raspistill", "-o", filename])
-        #print(ss_txt)
+        os.chdir('/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/')
+        #subprocess.call('ls', shell=True)
+        process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/test/test_v2_ourdata.sh %s %s" %(ss_txt,self.ss_out_dir)], 
+                stdout=PIPE, shell=True)
+        process.communicate()
+
     
     def inference_dc(self):
         '''
