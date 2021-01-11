@@ -31,7 +31,7 @@ def create_image_list(folder_path=None, model=None, file_type='.JPG'):
 
     return os.path.abspath(filename)
 
-def create_folder_list(dirs=None):
+def create_folder_list(dirs=None, model=None):
     '''
     create a txt file which contains the absolute path of all test image folders.
     the txt file will be fed into classification model.
@@ -48,8 +48,8 @@ def create_folder_list(dirs=None):
     '''
     
     dirs = dirs
-
-    with open('c_test_dirs.txt','w') as f:
+    filename = model + '_test_dirs.txt'
+    with open(filename, 'w') as f:
         f.write('\n'.join(dirs))
     
-    return os.path.abspath('c_test_dirs.txt')
+    return os.path.abspath(filename)

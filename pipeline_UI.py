@@ -16,15 +16,15 @@ class Setting:
         self.root = root
         self.root.title(' ML settings ')
         self.init_gui()
-        self.ds_dir, self.ss_dir, self.c_dirs = None, None, []
+        self.ds_dir, self.ss_dir, self.c_dirs, self.th_dirs = None, None, [], []
         #TODO: find default output folder
-        self.ds_out_dir = self.ss_out_dir = self.dc_out_dir = None
+        self.ds_out_dir = self.ss_out_dir = self.dc_out_dir = self.th_out_dir = None
         
     def get_mode(self):
         return self.mode.get()
     
     def get_model(self):
-        return self.ss.get(), self.dc.get(), self.ds.get()
+        return self.ss.get(), self.dc.get(), self.ds.get(), self.th.get()
         
     def get_ss_folder(self, even=None):
         self.ss_dir = filedialog.askdirectory()
@@ -34,13 +34,21 @@ class Setting:
         self.ds_dir = filedialog.askdirectory()
         return self.ds_dir
     
-    def get_multiple_folder(self):
+    def get_c_folders(self):
         self.c_dirs = []
         while True:
             folder = filedialog.askdirectory()
             if not folder:
                 break
-            self.c_dirs.append(folder)      
+            self.c_dirs.append(folder)    
+            
+    def get_th_folders(self):
+        self.th_dirs = []
+        while True:
+            folder = filedialog.askdirectory()
+            if not folder:
+                break
+            self.th_dirs.append(folder) 
             
     def get_ds_out_folder(self, even=None):
         self.ds_out_dir = filedialog.askdirectory()
@@ -53,6 +61,10 @@ class Setting:
     def get_dc_out_folder(self, even=None):
         self.dc_out_dir = filedialog.askdirectory()
         return self.dc_out_dir
+    
+    def get_th_out_folder(self, even=None):
+        self.th_out_dir = filedialog.askdirectory()
+        return self.th_out_dir
     
     def create_top_frame(self):
         self.top_frame = tk.Frame(self.root, relief=tk.SUNKEN, borderwidth=1)
@@ -91,6 +103,11 @@ class Setting:
         ds.grid(row=5, column=0)
         self.ds = tk.StringVar()
         tk.OptionMenu(mode_frame, self.ds, "Yes", "No").grid(row=5, column=1)
+        th = tk.Label(mode_frame, text='Thermal analysis: ')
+        th.configure(font=("Times New Roman", 11, "bold"))
+        th.grid(row=6, column=0)
+        self.th = tk.StringVar()
+        tk.OptionMenu(mode_frame, self.th, "Yes", "No").grid(row=6, column=1)
         
     def create_inference_frame(self):
         self.inf_frame = tk.Frame(self.bottom_frame, relief=tk.SUNKEN, borderwidth=1)
@@ -108,36 +125,48 @@ class Setting:
         ds_title = tk.Label(self.inf_frame, text=' Defect segmentation ')
         ds_title.configure(font=("Times New Roman", 13, "bold"))
         ds_title.grid(row=1, column=3)
+        th_title = tk.Label(self.inf_frame, text=' Themral analysis ')
+        th_title.configure(font=("Times New Roman", 13, "bold"))
+        th_title.grid(row=1, column=4)
         
         input_label = tk.Label(self.inf_frame, text='Input:')
         input_label.configure(font=("Times New Roman", 11, "bold"))
         input_label.grid(row=2, column=0)
-        ss_dir_button = tk.Button(self.inf_frame, text='choose test image folder', command=self.get_ss_folder)
+        ss_dir_button = tk.Button(self.inf_frame, text='choose test image folder', 
+                                  command=self.get_ss_folder)
         ss_dir_button.grid(row=2, column=1)
-        dc_dirs_button = tk.Button(self.inf_frame, text='choose test image folders', command=self.get_multiple_folder)
+        dc_dirs_button = tk.Button(self.inf_frame, text='choose test image folders', 
+                                   command=self.get_c_folders)
         dc_dirs_button.grid(row=2, column=2)
-        ds_dir_button = tk.Button(self.inf_frame, text='choose test image folder', command=self.get_ds_folder)
+        ds_dir_button = tk.Button(self.inf_frame, text='choose test image folder', 
+                                  command=self.get_ds_folder)
         ds_dir_button.grid(row=2, column=3)
+        th_dir_button = tk.Button(self.inf_frame, text='choose test image folder', 
+                                  command=self.get_th_folders)
+        th_dir_button.grid(row=2, column=4)
         
         input_label = tk.Label(self.inf_frame, text='Output:')
         input_label.configure(font=("Times New Roman", 11, "bold"))
         input_label.grid(row=3, column=0)
-        ss_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', command=self.get_ss_out_folder)
+        ss_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
+                                      command=self.get_ss_out_folder)
         ss_out_dir_button.grid(row=3, column=1)
-        dc_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', command=self.get_dc_out_folder)
+        dc_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
+                                      command=self.get_dc_out_folder)
         dc_out_dir_button.grid(row=3, column=2)
-        ds_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', command=self.get_ds_out_folder)
+        ds_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
+                                      command=self.get_ds_out_folder)
         ds_out_dir_button.grid(row=3, column=3)
+        th_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
+                                      command=self.get_th_out_folder)
+        th_out_dir_button.grid(row=3, column=4)
         
         confirm_label = tk.Label(self.inf_frame, text='To confirm: ')
         confirm_label.configure(font=("Times New Roman", 11, "bold"))
-        confirm_label.grid(row=4, column=1)
-        #set style for confirm button
-        #sto = tk.ttk.Style()
-        #sto.configure('W.TButton', font= ('Arial', 10, 'underline'), foreground='Green')
+        confirm_label.grid(row=4, column=2)
         confirm_button = tk.Button(self.inf_frame, text="Confirm",
                                    command=self.show, height=2, width=15)
-        confirm_button.grid(row=4, column=2)
+        confirm_button.grid(row=4, column=3)
         
     def create_training_frame(self):
         self.inf_frame = tk.Frame(self.bottom_frame, relief=tk.SUNKEN, borderwidth=1)
@@ -157,15 +186,18 @@ class Setting:
         print( "You entered:")
         print('-'*20)
         print('-Run: ', self.get_mode())
-        print('-Chosen model(s): Semantic segmentation/Defect classification/Defect segmentation', self.get_model())
+        print('-Chosen model(s): Semantic segmentation/Defect classification \
+              /Defect segmentation/Thermal analysis', self.get_model())
         print('Input folders:')
         print("-Semantic segmentation image list: ", self.ss_dir)
         print('-Defect segmentation image list: ', self.ds_dir)
         print('-Defect classification folders list: ', self.c_dirs)
+        print('-Thermal folder list: ', self.c_dirs)
         print('Output folders:')
         print("-Semantic segmentation output: ", self.ss_out_dir)
         print('-Defect segmentation output: ', self.ds_out_dir)
         print('-Defect classification output: ', self.dc_out_dir)
+        print('-Thermal output: ', self.dc_out_dir)
         
         
         print( '*'*20)
