@@ -135,22 +135,27 @@ class Run():
         - purpose: identify Spalling, Efflorescence, Rust
         -----------
         Output:
-            
+            -defect segmentation images
         '''
-        #TODO: excute terminal command for ds
+        #TODO: configure output folder (currently in parent directory)
         ds_txt = create_image_list(self.ds_folder, 'ds')
         os.chdir('/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/')
         process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/test/test_v2_ourdata_ds.sh %s %s" 
                          %(ds_txt,self.ds_out_dir)], stdout=PIPE, shell=True)
         process.communicate()
-        print('semantic segmentation process completed')
+        print('defect segmentation process completed')
 
     
     #TODO: no ML model for thermal analysis now, add inference/training once 
     #model is confirmed
     def thermal(self):
-        #TODO: excute terminal command for ds
+        
+        #Input image?
         th_txt = create_folder_list(self.th_dirs, 'th')
+        os.chdir('/home/paul/Workspaces/matlab/thermal')
+        process = Popen(["python3 /home/paul/Workspaces/matlab/thermal/get_all_thermal_data.py"], stdout=PIPE, shell=True)
+        process.communicate()
+        print('thermal process completed')
     
     def training_ss(self):
         '''
