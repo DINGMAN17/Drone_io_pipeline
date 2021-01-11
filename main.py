@@ -36,6 +36,7 @@ class Run():
         self.dc_out_dir = self.setting.dc_out_dir
         self.ds_out_dir = self.setting.ds_out_dir
         self.th_out_dir = self.setting.th_out_dir
+                
         
     def training(self):
         #TODO: consider running in parallel
@@ -108,7 +109,7 @@ class Run():
 
     
     def inference_dc(self):
-        #TODO: check output format (folder? images?)
+        #TODO: change default output folder in python script (process_image.py)
         '''
         Run inference on defect classification model. 
         - purpose: identify crack, spalling (Delamination)
@@ -116,12 +117,15 @@ class Run():
         Output:
             -folder named by IDs, contains crack, spalling images and folders with defect patches    
         '''
-        #TODO: excute terminal command for dc
+        upload, buildID, facadeID, flyID = self.setting.get_dc_details()
         dc_txt = create_folder_list(self.dc_dirs, 'dc')
         os.chdir('/home/paul/Workspaces/python/defect_classification/combine_process/')
-        process = Popen(["/home/paul/Workspaces/python/defect_classification/combine_process/run_check_defects.sh %s %s %s %s" 
-                        %(dc_txt,8,7,1)], 
-                stdout=PIPE, shell=True)
+        if upload == 'Yes':
+            process = Popen(["/home/paul/Workspaces/python/defect_classification/combine_process/run_check_defects.sh %s %s %s %s -uploading" 
+                        %(dc_txt,buildID,facadeID,flyID)], stdout=PIPE, shell=True)
+        else:
+            process = Popen(["/home/paul/Workspaces/python/defect_classification/combine_process/run_check_defects.sh %s %s %s %s" 
+                        %(dc_txt,buildID,facadeID,flyID)], stdout=PIPE, shell=True)
         process.communicate()
         print('defect classification process completed')
     
@@ -135,6 +139,11 @@ class Run():
         '''
         #TODO: excute terminal command for ds
         ds_txt = create_image_list(self.ds_folder, 'ds')
+        os.chdir('/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/')
+        process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/test/test_v2_ourdata_ds.sh %s %s" 
+                         %(ds_txt,self.ds_out_dir)], stdout=PIPE, shell=True)
+        process.communicate()
+        print('semantic segmentation process completed')
 
     
     #TODO: no ML model for thermal analysis now, add inference/training once 

@@ -66,6 +66,9 @@ class Setting:
         self.th_out_dir = filedialog.askdirectory()
         return self.th_out_dir
     
+    def get_dc_details(self):
+        return self.upload.get(), self.buildID.get(), self.facadeID.get(), self.flyID.get()
+    
     def create_top_frame(self):
         self.top_frame = tk.Frame(self.root, relief=tk.SUNKEN, borderwidth=1)
         self.top_frame.pack(side=tk.TOP)
@@ -114,59 +117,82 @@ class Setting:
         self.inf_frame.pack(side=tk.TOP)
         inf_title = tk.Label(self.inf_frame, text='Inference setting')
         inf_title.configure(font=("Times New Roman", 18, "bold"))
-        inf_title.grid(row=0, columnspan=7)
+        inf_title.grid(row=0, columnspan=13)
         
         ss_title = tk.Label(self.inf_frame, text=' Semantic segmentation ')
         ss_title.configure(font=("Times New Roman", 13, "bold"))
-        ss_title.grid(row=1, column=1)
+        ss_title.grid(row=1, column=1, columnspan=2)
         dc_title = tk.Label(self.inf_frame, text=' Defect classification ')
         dc_title.configure(font=("Times New Roman", 13, "bold"))
-        dc_title.grid(row=1, column=2)
+        dc_title.grid(row=1, column=3, columnspan=2)
         ds_title = tk.Label(self.inf_frame, text=' Defect segmentation ')
         ds_title.configure(font=("Times New Roman", 13, "bold"))
-        ds_title.grid(row=1, column=3)
+        ds_title.grid(row=1, column=5, columnspan=2)
         th_title = tk.Label(self.inf_frame, text=' Themral analysis ')
         th_title.configure(font=("Times New Roman", 13, "bold"))
-        th_title.grid(row=1, column=4)
+        th_title.grid(row=1, column=7, columnspan=2)
         
         input_label = tk.Label(self.inf_frame, text='Input:')
         input_label.configure(font=("Times New Roman", 11, "bold"))
         input_label.grid(row=2, column=0)
         ss_dir_button = tk.Button(self.inf_frame, text='choose test image folder', 
                                   command=self.get_ss_folder)
-        ss_dir_button.grid(row=2, column=1)
+        ss_dir_button.grid(row=2, column=1, columnspan=2)
         dc_dirs_button = tk.Button(self.inf_frame, text='choose test image folders', 
                                    command=self.get_c_folders)
-        dc_dirs_button.grid(row=2, column=2)
+        dc_dirs_button.grid(row=2, column=3, columnspan=2)
         ds_dir_button = tk.Button(self.inf_frame, text='choose test image folder', 
                                   command=self.get_ds_folder)
-        ds_dir_button.grid(row=2, column=3)
+        ds_dir_button.grid(row=2, column=5, columnspan=2)
         th_dir_button = tk.Button(self.inf_frame, text='choose test image folder', 
                                   command=self.get_th_folders)
-        th_dir_button.grid(row=2, column=4)
+        th_dir_button.grid(row=2, column=7, columnspan=2)
         
         input_label = tk.Label(self.inf_frame, text='Output:')
         input_label.configure(font=("Times New Roman", 11, "bold"))
         input_label.grid(row=3, column=0)
         ss_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
                                       command=self.get_ss_out_folder)
-        ss_out_dir_button.grid(row=3, column=1)
+        ss_out_dir_button.grid(row=3, column=1, columnspan=2)
         dc_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
                                       command=self.get_dc_out_folder)
-        dc_out_dir_button.grid(row=3, column=2)
+        dc_out_dir_button.grid(row=3, column=3, columnspan=2)
         ds_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
                                       command=self.get_ds_out_folder)
-        ds_out_dir_button.grid(row=3, column=3)
+        ds_out_dir_button.grid(row=3, column=5, columnspan=2)
         th_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
                                       command=self.get_th_out_folder)
-        th_out_dir_button.grid(row=3, column=4)
+        th_out_dir_button.grid(row=3, column=7, columnspan=2)
+        
+        upload_label = tk.Label(self.inf_frame, text='Upload to database: ')
+        #upload_label.configure(font=("Times New Roman", 11, "bold"))
+        upload_label.grid(row=4, column=3)
+        self.upload = tk.StringVar()        
+        tk.OptionMenu(self.inf_frame, self.upload, "Yes", "No").grid(row=4, column=4)
+        
+        dc_build_ID = tk.Label(self.inf_frame, text='Building ID:')
+        #dc_build_ID.configure(font=("Times New Roman", 11))
+        dc_build_ID.grid(row=5, column=3)
+        self.buildID = tk.IntVar()
+        tk.Entry(self.inf_frame, width=8, textvariable=self.buildID).grid(row=5, column=4)
+        
+        dc_facade_ID = tk.Label(self.inf_frame, text='Facade ID:')
+        #dc_facade_ID.configure(font=("Times New Roman", 11))
+        dc_facade_ID.grid(row=6, column=3)
+        self.facadeID = tk.IntVar()
+        tk.Entry(self.inf_frame, width=8, textvariable=self.facadeID).grid(row=6, column=4)
+        
+        dc_fly_ID = tk.Label(self.inf_frame, text='Fly ID:')
+        dc_fly_ID.grid(row=7, column=3)
+        self.flyID = tk.IntVar()
+        tk.Entry(self.inf_frame, width=8, textvariable=self.flyID).grid(row=7, column=4)
         
         confirm_label = tk.Label(self.inf_frame, text='To confirm: ')
         confirm_label.configure(font=("Times New Roman", 11, "bold"))
-        confirm_label.grid(row=4, column=2)
+        confirm_label.grid(row=8, column=3)
         confirm_button = tk.Button(self.inf_frame, text="Confirm",
                                    command=self.show, height=2, width=15)
-        confirm_button.grid(row=4, column=3)
+        confirm_button.grid(row=8, column=5)
         
     def create_training_frame(self):
         self.inf_frame = tk.Frame(self.bottom_frame, relief=tk.SUNKEN, borderwidth=1)
@@ -198,7 +224,9 @@ class Setting:
         print('-Defect segmentation output: ', self.ds_out_dir)
         print('-Defect classification output: ', self.dc_out_dir)
         print('-Thermal output: ', self.th_out_dir)
-        
+        print('Defect classification details:')
+        print('-upload:', self.get_dc_details()[0])
+        print('-buildID, facadeID, flyID: ', self.get_dc_details()[1:])        
         
         print( '*'*20)
     
