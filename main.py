@@ -104,6 +104,7 @@ class Run():
         process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/test/test_v2_ourdata.sh %s %s" %(ss_txt,self.ss_out_dir)], 
                 stdout=PIPE, shell=True)
         process.communicate()
+        print('semantic segmentation process completed')
 
     
     def inference_dc(self):
@@ -113,11 +114,16 @@ class Run():
         - purpose: identify crack, spalling (Delamination)
         -----------
         Output:
-            
+            -folder named by IDs, contains crack, spalling images and folders with defect patches    
         '''
         #TODO: excute terminal command for dc
         dc_txt = create_folder_list(self.dc_dirs, 'dc')
-        #print(dc_txt)
+        os.chdir('/home/paul/Workspaces/python/defect_classification/combine_process/')
+        process = Popen(["/home/paul/Workspaces/python/defect_classification/combine_process/run_check_defects.sh %s %s %s %s" 
+                        %(dc_txt,8,7,1)], 
+                stdout=PIPE, shell=True)
+        process.communicate()
+        print('defect classification process completed')
     
     def inference_ds(self):
         '''

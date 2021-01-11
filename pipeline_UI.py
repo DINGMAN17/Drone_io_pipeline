@@ -192,12 +192,12 @@ class Setting:
         print("-Semantic segmentation image list: ", self.ss_dir)
         print('-Defect segmentation image list: ', self.ds_dir)
         print('-Defect classification folders list: ', self.c_dirs)
-        print('-Thermal folder list: ', self.c_dirs)
+        print('-Thermal folder list: ', self.th_dirs)
         print('Output folders:')
         print("-Semantic segmentation output: ", self.ss_out_dir)
         print('-Defect segmentation output: ', self.ds_out_dir)
         print('-Defect classification output: ', self.dc_out_dir)
-        print('-Thermal output: ', self.dc_out_dir)
+        print('-Thermal output: ', self.th_out_dir)
         
         
         print( '*'*20)
