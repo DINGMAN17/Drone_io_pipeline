@@ -32,11 +32,6 @@ class Run():
         self.dc_dirs = self.setting.c_dirs
         self.ds_folder = self.setting.ds_dir
         self.th_dirs = self.setting.th_dirs
-        self.ss_out_dir = self.setting.ss_out_dir
-        self.dc_out_dir = self.setting.dc_out_dir
-        self.ds_out_dir = self.setting.ds_out_dir
-        self.th_out_dir = self.setting.th_out_dir
-                
         
     def training(self):
         #TODO: consider running in parallel
@@ -54,7 +49,6 @@ class Run():
             self.thermal()
     
     def inference(self):
-        #TODO: consider running in parallel
         if {self.ss, self.dc, self.ds, self.th} == {False}:
             print('Please choose at least one model')
             return 
@@ -99,17 +93,22 @@ class Run():
             -folder containts masked window images
             -semantic segmentation images
         '''
-        #TODO: test output folder for ss images
+
+        #create a folder named 'semantic' in the output directory to store results.
+        if self.setting.ss_out_dir is not None:
+            ss_out_dir = self.setting.ss_out_dir+'/semantic/'
+            if not os.path.exists(ss_out_dir):
+                os.mkdir(ss_out_dir)
+
         ss_txt = create_image_list(self.ss_folder, 'ss')
         os.chdir('/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/')
-        process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/test/test_v2_ourdata.sh %s %s" %(ss_txt,self.ss_out_dir)], 
+        process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/test/test_v2_ourdata.sh %s %s" %(ss_txt, ss_out_dir)], 
                 stdout=PIPE, shell=True)
         process.communicate()
-        print('semantic segmentation process completed')
+        print('Semantic segmentation process is completed')
 
     
     def inference_dc(self):
-        #TODO: change default output folder in python script (process_image.py)
         '''
         Run inference on defect classification model. 
         - purpose: identify crack, spalling (Delamination)
@@ -118,16 +117,23 @@ class Run():
             -folder named by IDs, contains crack, spalling images and folders with defect patches    
         '''
         upload, buildID, facadeID, flyID = self.setting.get_dc_details()
+        if self.setting.dc_out_dir is not None:
+            dc_out_dir = self.setting.dc_out_dir+'/classification/'
+            if not os.path.exists(dc_out_dir):
+                os.mkdir(dc_out_dir)
         dc_txt = create_folder_list(self.dc_dirs, 'dc')
+
         os.chdir('/home/paul/Workspaces/python/defect_classification/combine_process/')
-        if upload == 'Yes':
-            process = Popen(["/home/paul/Workspaces/python/defect_classification/combine_process/run_check_defects.sh %s %s %s %s -uploading" 
-                        %(dc_txt,buildID,facadeID,flyID)], stdout=PIPE, shell=True)
+        if upload != 'Yes': #don't upload for testing purpose
+            process = Popen(["/home/paul/Workspaces/python/defect_classification/combine_process/run_check_defects.sh %s %s %s %s %s" 
+                        %(dc_txt,buildID,facadeID,flyID,dc_out_dir)], stdout=PIPE, shell=True)
         else:
-            process = Popen(["/home/paul/Workspaces/python/defect_classification/combine_process/run_check_defects.sh %s %s %s %s" 
-                        %(dc_txt,buildID,facadeID,flyID)], stdout=PIPE, shell=True)
+            print('upload the results to cloud database')
+            #process = Popen(["/home/paul/Workspaces/python/defect_classification/combine_process/run_check_defects.sh %s %s %s %s %s -uploading" 
+                        #%(dc_txt,buildID,facadeID,flyID,dc_out_dir)], stdout=PIPE, shell=True)
         process.communicate()
-        print('defect classification process completed')
+        print('Defect classification process is completed')
+
     
     def inference_ds(self):
         '''
@@ -139,21 +145,34 @@ class Run():
         '''
         #TODO: configure output folder (currently in parent directory)
         ds_txt = create_image_list(self.ds_folder, 'ds')
+        if self.setting.ds_out_dir is not None:
+            ds_out_dir = self.setting.ds_out_dir+'/defect_seg/'
+            if not os.path.exists(ds_out_dir):
+                os.mkdir(ds_out_dir)
         os.chdir('/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/')
         process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/test/test_v2_ourdata_ds.sh %s %s" 
-                         %(ds_txt,self.ds_out_dir)], stdout=PIPE, shell=True)
+                         %(ds_txt,ds_out_dir)], stdout=PIPE, shell=True)
         process.communicate()
-        print('defect segmentation process completed')
+        print('Defect segmentation process is completed')
 
     
-    #TODO: no ML model for thermal analysis now, add inference/training once 
-    #model is confirmed
+    #TODO: no ML model for thermal analysis now, add inference/training once model is confirmed
     def thermal(self):
-        
-        #Input image?
+        '''
+        Run thermal analysis using IR images. 
+        - purpose: 
+        -----------
+        Output:
+            -
+        '''
+    
         th_txt = create_folder_list(self.th_dirs, 'th')
+        if self.setting.ds_out_dir is not None:
+            ds_out_dir = self.setting.ds_out_dir+'/'
+
         os.chdir('/home/paul/Workspaces/matlab/thermal')
-        process = Popen(["python3 /home/paul/Workspaces/matlab/thermal/get_all_thermal_data.py"], stdout=PIPE, shell=True)
+        process = Popen(["python3 /home/paul/Workspaces/matlab/thermal/get_all_thermal_data.py %s %s"
+                        %(th_txt, th_out_dir)], stdout=PIPE, shell=True)
         process.communicate()
         print('thermal process completed')
     
