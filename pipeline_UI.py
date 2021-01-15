@@ -16,15 +16,15 @@ class Setting:
         self.root = root
         self.root.title(' ML settings ')
         self.init_gui()
-        self.ds_dir, self.ss_dir, self.c_dirs, self.th_dirs = None, None, [], []
+        self.ds_dir, self.ss_dir, self.c_dirs = None, None, []
         #TODO: find default output folder
-        self.ds_out_dir = self.ss_out_dir = self.dc_out_dir = self.th_out_dir = None
+        self.ds_out_dir = self.ss_out_dir = self.dc_out_dir = None
         
     def get_mode(self):
         return self.mode.get()
     
     def get_model(self):
-        return self.ss.get(), self.dc.get(), self.ds.get(), self.th.get()
+        return self.ss.get(), self.dc.get(), self.ds.get(), self.all_model.get()
         
     def get_ss_folder(self, even=None):
         self.ss_dir = filedialog.askdirectory()
@@ -42,14 +42,6 @@ class Setting:
                 break
             self.c_dirs.append(folder)    
             
-    def get_th_folders(self):
-        self.th_dirs = []
-        while True:
-            folder = filedialog.askdirectory()
-            if not folder:
-                break
-            self.th_dirs.append(folder) 
-            
     def get_ds_out_folder(self, even=None):
         self.ds_out_dir = filedialog.askdirectory()
         return self.ds_out_dir
@@ -61,10 +53,6 @@ class Setting:
     def get_dc_out_folder(self, even=None):
         self.dc_out_dir = filedialog.askdirectory()
         return self.dc_out_dir
-    
-    def get_th_out_folder(self, even=None):
-        self.th_out_dir = filedialog.askdirectory()
-        return self.th_out_dir
     
     def get_dc_details(self):
         return self.upload.get(), self.buildID.get(), self.facadeID.get(), self.flyID.get()
@@ -91,26 +79,26 @@ class Setting:
         model_title.configure(font='Arial 11')
         model_title.grid(row=2, column=0, columnspan=10)
         
+        all_model = tk.Label(mode_frame, text='All: ')
+        all_model.configure(font=("Times New Roman", 11, "bold"))
+        all_model.grid(row=3, column=0)
+        self.all_model = tk.StringVar()
+        tk.OptionMenu(mode_frame, self.all_model, "Yes", "No").grid(row=3, column=1)
         ss = tk.Label(mode_frame, text='Semantic segmentation: ')
         ss.configure(font=("Times New Roman", 11, "bold"))
-        ss.grid(row=3, column=0)
+        ss.grid(row=4, column=0)
         self.ss = tk.StringVar()
-        tk.OptionMenu(mode_frame, self.ss, "Yes", "No").grid(row=3, column=1)
+        tk.OptionMenu(mode_frame, self.ss, "Yes", "No").grid(row=4, column=1)
         dc = tk.Label(mode_frame, text='Defect classification: ')
         dc.configure(font=("Times New Roman", 11, "bold"))
-        dc.grid(row=4, column=0)
+        dc.grid(row=5, column=0)
         self.dc = tk.StringVar()
-        tk.OptionMenu(mode_frame, self.dc, "Yes", "No").grid(row=4, column=1)
+        tk.OptionMenu(mode_frame, self.dc, "Yes", "No").grid(row=5, column=1)
         ds = tk.Label(mode_frame, text='Defect segmentation: ')
         ds.configure(font=("Times New Roman", 11, "bold"))
-        ds.grid(row=5, column=0)
+        ds.grid(row=6, column=0)
         self.ds = tk.StringVar()
-        tk.OptionMenu(mode_frame, self.ds, "Yes", "No").grid(row=5, column=1)
-        th = tk.Label(mode_frame, text='Thermal analysis: ')
-        th.configure(font=("Times New Roman", 11, "bold"))
-        th.grid(row=6, column=0)
-        self.th = tk.StringVar()
-        tk.OptionMenu(mode_frame, self.th, "Yes", "No").grid(row=6, column=1)
+        tk.OptionMenu(mode_frame, self.ds, "Yes", "No").grid(row=6, column=1)
         
     def create_inference_frame(self):
         self.inf_frame = tk.Frame(self.bottom_frame, relief=tk.SUNKEN, borderwidth=1)
@@ -128,9 +116,6 @@ class Setting:
         ds_title = tk.Label(self.inf_frame, text=' Defect segmentation ')
         ds_title.configure(font=("Times New Roman", 13, "bold"))
         ds_title.grid(row=1, column=5, columnspan=2)
-        th_title = tk.Label(self.inf_frame, text=' Themral analysis ')
-        th_title.configure(font=("Times New Roman", 13, "bold"))
-        th_title.grid(row=1, column=7, columnspan=2)
         
         input_label = tk.Label(self.inf_frame, text='Input:')
         input_label.configure(font=("Times New Roman", 11, "bold"))
@@ -144,13 +129,10 @@ class Setting:
         ds_dir_button = tk.Button(self.inf_frame, text='choose test image folder', 
                                   command=self.get_ds_folder)
         ds_dir_button.grid(row=2, column=5, columnspan=2)
-        th_dir_button = tk.Button(self.inf_frame, text='choose test image folder', 
-                                  command=self.get_th_folders)
-        th_dir_button.grid(row=2, column=7, columnspan=2)
         
-        input_label = tk.Label(self.inf_frame, text='Output:')
-        input_label.configure(font=("Times New Roman", 11, "bold"))
-        input_label.grid(row=3, column=0)
+        output_label = tk.Label(self.inf_frame, text='Output:')
+        output_label.configure(font=("Times New Roman", 11, "bold"))
+        output_label.grid(row=3, column=0)
         ss_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
                                       command=self.get_ss_out_folder)
         ss_out_dir_button.grid(row=3, column=1, columnspan=2)
@@ -160,9 +142,6 @@ class Setting:
         ds_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
                                       command=self.get_ds_out_folder)
         ds_out_dir_button.grid(row=3, column=5, columnspan=2)
-        th_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
-                                      command=self.get_th_out_folder)
-        th_out_dir_button.grid(row=3, column=7, columnspan=2)
         
         upload_label = tk.Label(self.inf_frame, text='Upload to database: ')
         #upload_label.configure(font=("Times New Roman", 11, "bold"))
@@ -192,14 +171,10 @@ class Setting:
         confirm_label.grid(row=8, column=3)
         confirm_button = tk.Button(self.inf_frame, text="Confirm",
                                    command=self.show, height=2, width=15)
-        confirm_button.grid(row=8, column=5)
+        confirm_button.grid(row=8, column=4)
         
     def create_training_frame(self):
-        self.inf_frame = tk.Frame(self.bottom_frame, relief=tk.SUNKEN, borderwidth=1)
-        self.inf_frame.pack()
-        inf_title = tk.Label(self.inf_frame, text='Training setting')
-        inf_title.configure(font='Arial 15')
-        inf_title.grid(row=0, columnspan=7)
+        pass
         
     def init_gui(self):
         self.create_top_frame()
@@ -212,18 +187,16 @@ class Setting:
         print( "You entered:")
         print('-'*20)
         print('-Run: ', self.get_mode())
-        print('-Chosen model(s): Semantic segmentation/Defect classification \
-              /Defect segmentation/Thermal analysis', self.get_model())
+        print('-Chosen model(s): All/Semantic segmentation/Defect classification \
+              /Defect segmentation', self.get_model())
         print('Input folders:')
         print("-Semantic segmentation image list: ", self.ss_dir)
         print('-Defect segmentation image list: ', self.ds_dir)
         print('-Defect classification folders list: ', self.c_dirs)
-        print('-Thermal folder list: ', self.th_dirs)
         print('Output folders:')
         print("-Semantic segmentation output: ", self.ss_out_dir)
         print('-Defect segmentation output: ', self.ds_out_dir)
         print('-Defect classification output: ', self.dc_out_dir)
-        print('-Thermal output: ', self.th_out_dir)
         print('Defect classification details:')
         print('-upload:', self.get_dc_details()[0])
         print('-buildID, facadeID, flyID: ', self.get_dc_details()[1:])        

@@ -26,18 +26,16 @@ class Run():
         Get parameters from GUI
         '''
         self.mode = self.setting.get_mode() #training/inference
-        self.ss, self.dc, self.ds, self.th = [True if model=='Yes' else False 
+        self.ss, self.dc, self.ds, self.all_model = [True if model=='Yes' else False 
                                         for model in self.setting.get_model()]
-        self.ss_folder = self.setting.ss_dir
-        self.dc_dirs = self.setting.c_dirs
-        self.ds_folder = self.setting.ds_dir
-        self.th_dirs = self.setting.th_dirs
+
+        self.ss_dir, self.dc_dirs, self.ds_dir = self.setting.ss_dir, self.setting.c_dirs, self.setting.ds_dir
         
     def training(self):
         #TODO: consider running in parallel
         if {self.ss, self.dc, self.ds, self.th} == {False}:
             print('Please choose at least one ML model')
-            return None
+            return 
         if self.ss:
             self.training_ss()
         if self.dc:
@@ -49,12 +47,21 @@ class Run():
             self.thermal()
     
     def inference(self):
-        if {self.ss, self.dc, self.ds, self.th} == {False}:
+        if {self.ss, self.dc, self.ds, self.all_model} == {False}:
             print('Please choose at least one model')
             return 
+
+        if self.all_model:
+            image_txt = create_image_list(self.ss_dir, 'all')
+            if self.setting.ss_out_dir is not None:
+                output_dir = self.setting.ss_out_dir
+            self.inference_ss(image_txt, output_dir)
+            self.inference_dc(output_dir=output_dir)
+            self.inference_ds(image_txt, output_dir)
+            return
         
         if self.ss:
-            if self.ss_folder != None:
+            if self.ss_dir != None:
                 self.inference_ss()
             else: 
                 print('Please select the test image folder to run semantic \
@@ -70,21 +77,14 @@ class Run():
                 return 
             
         if self.ds:
-            if self.ds_folder != None:
+            if self.ds_dir != None:
                 self.inference_ds()
             else: 
                 print('Please select the test image folder to run defect \
                       segmentation model')
                 return 
-        
-        if self.th:
-            #TODO: might need to change the function once ML model is ready
-            if self.th_dirs != []:
-                self.thermal()
-            else: 
-                print('Please select the test image folder to run thermal analysis')
     
-    def inference_ss(self):
+    def inference_ss(self, input_file=None, output_dir=None):
         '''
         Run inference on semantic segmentation model.
         - purpose: identify strucural elements and mask windows
@@ -95,12 +95,18 @@ class Run():
         '''
 
         #create a folder named 'semantic' in the output directory to store results.
+        if output_dir is not None:
+            ss_out_dir = output_dir+'/semantic/'
+            if not os.path.exists(ss_out_dir):
+                os.mkdir(ss_out_dir)
         if self.setting.ss_out_dir is not None:
             ss_out_dir = self.setting.ss_out_dir+'/semantic/'
             if not os.path.exists(ss_out_dir):
                 os.mkdir(ss_out_dir)
-
-        ss_txt = create_image_list(self.ss_folder, 'ss')
+        if input_file != None:
+            ss_txt = input_file
+        else:
+            ss_txt = create_image_list(self.ss_dir, 'ss')
         os.chdir('/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/')
         process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/test/test_v2_ourdata.sh %s %s" %(ss_txt, ss_out_dir)], 
                 stdout=PIPE, shell=True)
@@ -108,7 +114,7 @@ class Run():
         print('Semantic segmentation process is completed')
 
     
-    def inference_dc(self):
+    def inference_dc(self, input_file=None, output_dir=None):
         '''
         Run inference on defect classification model. 
         - purpose: identify crack, spalling (Delamination)
@@ -117,10 +123,18 @@ class Run():
             -folder named by IDs, contains crack, spalling images and folders with defect patches    
         '''
         upload, buildID, facadeID, flyID = self.setting.get_dc_details()
+
+        if output_dir is not None:
+            dc_out_dir = output_dir+'/classification/'
+            if not os.path.exists(dc_out_dir):
+                os.mkdir(dc_out_dir)
         if self.setting.dc_out_dir is not None:
             dc_out_dir = self.setting.dc_out_dir+'/classification/'
             if not os.path.exists(dc_out_dir):
                 os.mkdir(dc_out_dir)
+
+        if self.all_model == True:
+            self.dc_dirs.append(self.ss_dir)
         dc_txt = create_folder_list(self.dc_dirs, 'dc')
 
         os.chdir('/home/paul/Workspaces/python/defect_classification/combine_process/')
@@ -135,7 +149,7 @@ class Run():
         print('Defect classification process is completed')
 
     
-    def inference_ds(self):
+    def inference_ds(self, input_file=None, output_dir=None):
         '''
         Run inference on defect segmentation model. 
         - purpose: identify Spalling, Efflorescence, Rust
@@ -143,8 +157,15 @@ class Run():
         Output:
             -defect segmentation images
         '''
-        #TODO: configure output folder (currently in parent directory)
-        ds_txt = create_image_list(self.ds_folder, 'ds')
+        if input_file != None:
+            ds_txt = input_file
+        else:
+            ds_txt = create_image_list(self.ds_dir, 'ds')
+
+        if output_dir is not None:
+            ds_out_dir = output_dir+'/defect_seg/'
+            if not os.path.exists(ds_out_dir):
+                os.mkdir(ds_out_dir)
         if self.setting.ds_out_dir is not None:
             ds_out_dir = self.setting.ds_out_dir+'/defect_seg/'
             if not os.path.exists(ds_out_dir):
@@ -157,7 +178,7 @@ class Run():
 
     
     #TODO: no ML model for thermal analysis now, add inference/training once model is confirmed
-    def thermal(self):
+    #def thermal(self):
         '''
         Run thermal analysis using IR images. 
         - purpose: 
@@ -166,15 +187,16 @@ class Run():
             -
         '''
     
-        th_txt = create_folder_list(self.th_dirs, 'th')
-        if self.setting.ds_out_dir is not None:
-            ds_out_dir = self.setting.ds_out_dir+'/'
-
-        os.chdir('/home/paul/Workspaces/matlab/thermal')
-        process = Popen(["python3 /home/paul/Workspaces/matlab/thermal/get_all_thermal_data.py %s %s"
-                        %(th_txt, th_out_dir)], stdout=PIPE, shell=True)
-        process.communicate()
-        print('thermal process completed')
+        #th_txt = create_folder_list(self.th_dirs, 'th')
+        #if self.setting.th_out_dir is not None:
+            #th_out_dir = self.setting.th_out_dir+'/thermal/'
+            #if not os.path.exists(th_out_dir):
+            #    os.mkdir(th_out_dir)
+        #os.chdir('/home/paul/Workspaces/matlab/thermal')
+        #process = Popen(["python3 /home/paul/Workspaces/matlab/thermal/get_all_thermal_data.py -input_file %s -out_dir %s"
+        #                %(th_txt, th_out_dir)], stdout=PIPE, shell=True)
+        #process.communicate()
+        #print('thermal process completed')
     
     def training_ss(self):
         '''

@@ -48,10 +48,11 @@ def create_folder_list(dirs=None, model=None):
     '''
     
     dirs = dirs
-    if model == 'th':
-        filename = '/home/paul/Workspaces/matlab/thermal/input_thermal.txt'
-    else:
-        filename = model + '_test_dirs.txt'
+    #if model == 'th':
+    #    filename = '/home/paul/Workspaces/matlab/thermal/input_thermal.txt'
+    #else:
+    #    filename = model + '_test_dirs.txt'
+    filename = model + '_test_dirs.txt'
     with open(filename, 'w') as f:
         f.write('\n'.join(dirs))
     
