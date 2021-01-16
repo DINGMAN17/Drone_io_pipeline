@@ -28,10 +28,12 @@ class Setting:
         
     def get_ss_folder(self, even=None):
         self.ss_dir = filedialog.askdirectory()
+        self.ss_dir_label.config(text=self.ss_dir)
         return self.ss_dir
     
     def get_ds_folder(self, even=None):
         self.ds_dir = filedialog.askdirectory()
+        self.ds_dir_label.config(text=self.ds_dir)
         return self.ds_dir
     
     def get_c_folders(self):
@@ -40,18 +42,22 @@ class Setting:
             folder = filedialog.askdirectory()
             if not folder:
                 break
-            self.c_dirs.append(folder)    
+            self.c_dirs.append(folder)  
+        self.dc_dirs_label.config(text=self.c_dirs)
             
     def get_ds_out_folder(self, even=None):
         self.ds_out_dir = filedialog.askdirectory()
+        self.ds_out_label.config(text=self.ds_out_dir)
         return self.ds_out_dir
     
     def get_ss_out_folder(self, even=None):
         self.ss_out_dir = filedialog.askdirectory()
+        self.ss_out_label.config(text=self.ss_out_dir)
         return self.ss_out_dir
     
     def get_dc_out_folder(self, even=None):
         self.dc_out_dir = filedialog.askdirectory()
+        self.dc_out_label.config(text=self.dc_out_dir)
         return self.dc_out_dir
     
     def get_dc_details(self):
@@ -123,55 +129,67 @@ class Setting:
         ss_dir_button = tk.Button(self.inf_frame, text='choose test image folder', 
                                   command=self.get_ss_folder)
         ss_dir_button.grid(row=2, column=1, columnspan=2)
+        self.ss_dir_label = tk.Label(self.inf_frame)
+        self.ss_dir_label.grid(row=3, column=1, columnspan=2)
         dc_dirs_button = tk.Button(self.inf_frame, text='choose test image folders', 
                                    command=self.get_c_folders)
         dc_dirs_button.grid(row=2, column=3, columnspan=2)
+        self.dc_dirs_label = tk.Label(self.inf_frame)
+        self.dc_dirs_label.grid(row=3, column=3, columnspan=2)
         ds_dir_button = tk.Button(self.inf_frame, text='choose test image folder', 
                                   command=self.get_ds_folder)
         ds_dir_button.grid(row=2, column=5, columnspan=2)
+        self.ds_dir_label = tk.Label(self.inf_frame)
+        self.ds_dir_label.grid(row=3, column=5, columnspan=2)
         
         output_label = tk.Label(self.inf_frame, text='Output:')
         output_label.configure(font=("Times New Roman", 11, "bold"))
-        output_label.grid(row=3, column=0)
+        output_label.grid(row=4, column=0)
         ss_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
                                       command=self.get_ss_out_folder)
-        ss_out_dir_button.grid(row=3, column=1, columnspan=2)
+        ss_out_dir_button.grid(row=4, column=1, columnspan=2)
+        self.ss_out_label = tk.Label(self.inf_frame)
+        self.ss_out_label.grid(row=5, column=1, columnspan=2)
         dc_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
                                       command=self.get_dc_out_folder)
-        dc_out_dir_button.grid(row=3, column=3, columnspan=2)
+        dc_out_dir_button.grid(row=4, column=3, columnspan=2)
+        self.dc_out_label = tk.Label(self.inf_frame)
+        self.dc_out_label.grid(row=5, column=3, columnspan=2)
         ds_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
                                       command=self.get_ds_out_folder)
-        ds_out_dir_button.grid(row=3, column=5, columnspan=2)
+        ds_out_dir_button.grid(row=4, column=5, columnspan=2)
+        self.ds_out_label = tk.Label(self.inf_frame)
+        self.ds_out_label.grid(row=5, column=5, columnspan=2)
         
         upload_label = tk.Label(self.inf_frame, text='Upload to database: ')
         #upload_label.configure(font=("Times New Roman", 11, "bold"))
-        upload_label.grid(row=4, column=3)
+        upload_label.grid(row=6, column=3)
         self.upload = tk.StringVar()        
-        tk.OptionMenu(self.inf_frame, self.upload, "Yes", "No").grid(row=4, column=4)
+        tk.OptionMenu(self.inf_frame, self.upload, "Yes", "No").grid(row=6, column=4)
         
         dc_build_ID = tk.Label(self.inf_frame, text='Building ID:')
         #dc_build_ID.configure(font=("Times New Roman", 11))
-        dc_build_ID.grid(row=5, column=3)
+        dc_build_ID.grid(row=7, column=3)
         self.buildID = tk.IntVar()
-        tk.Entry(self.inf_frame, width=8, textvariable=self.buildID).grid(row=5, column=4)
+        tk.Entry(self.inf_frame, width=8, textvariable=self.buildID).grid(row=7, column=4)
         
         dc_facade_ID = tk.Label(self.inf_frame, text='Facade ID:')
         #dc_facade_ID.configure(font=("Times New Roman", 11))
-        dc_facade_ID.grid(row=6, column=3)
+        dc_facade_ID.grid(row=8, column=3)
         self.facadeID = tk.IntVar()
-        tk.Entry(self.inf_frame, width=8, textvariable=self.facadeID).grid(row=6, column=4)
+        tk.Entry(self.inf_frame, width=8, textvariable=self.facadeID).grid(row=8, column=4)
         
         dc_fly_ID = tk.Label(self.inf_frame, text='Fly ID:')
-        dc_fly_ID.grid(row=7, column=3)
+        dc_fly_ID.grid(row=9, column=3)
         self.flyID = tk.IntVar()
-        tk.Entry(self.inf_frame, width=8, textvariable=self.flyID).grid(row=7, column=4)
+        tk.Entry(self.inf_frame, width=8, textvariable=self.flyID).grid(row=9, column=4)
         
         confirm_label = tk.Label(self.inf_frame, text='To confirm: ')
         confirm_label.configure(font=("Times New Roman", 11, "bold"))
-        confirm_label.grid(row=8, column=3)
+        confirm_label.grid(row=10, column=3)
         confirm_button = tk.Button(self.inf_frame, text="Confirm",
                                    command=self.show, height=2, width=15)
-        confirm_button.grid(row=8, column=4)
+        confirm_button.grid(row=10, column=4)
         
     def create_training_frame(self):
         pass
