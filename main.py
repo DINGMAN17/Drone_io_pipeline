@@ -5,6 +5,7 @@ Created on Sat Jan  9 17:52:52 2021
 @author: cryst
 """
 import os
+import sys
 from subprocess import PIPE, Popen
 import tkinter as tk
 from pipeline_UI import Setting
@@ -109,10 +110,17 @@ class Run():
             ss_txt = create_image_list(self.ss_dir, 'ss')
         os.chdir('/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/')
         process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/test/test_v2_ourdata.sh %s %s" %(ss_txt, ss_out_dir)], 
-                stdout=PIPE, shell=True)
-        process.communicate()
-        print('Semantic segmentation process is completed')
+                stdout=PIPE, shell=True, universal_newlines=True)
+        while True:
+            out = process.stdout.read(1)
+            if out == '' and process.poll() != None:
+                print('Semantic segmentation process is completed')
+                break
+            if out != '':
+                sys.stdout.write(out)
+                sys.stdout.flush()
 
+        #out, err = process.communicate()
     
     def inference_dc(self, input_file=None, output_dir=None):
         '''
@@ -140,13 +148,21 @@ class Run():
         os.chdir('/home/paul/Workspaces/python/defect_classification/combine_process/')
         if upload != 'Yes': #don't upload for testing purpose
             process = Popen(["/home/paul/Workspaces/python/defect_classification/combine_process/run_check_defects.sh %s %s %s %s %s" 
-                        %(dc_txt,buildID,facadeID,flyID,dc_out_dir)], stdout=PIPE, shell=True)
+                        %(dc_txt,buildID,facadeID,flyID,dc_out_dir)], stdout=PIPE, shell=True, universal_newlines=True)
         else:
             print('upload the results to cloud database')
             #process = Popen(["/home/paul/Workspaces/python/defect_classification/combine_process/run_check_defects.sh %s %s %s %s %s -uploading" 
-                        #%(dc_txt,buildID,facadeID,flyID,dc_out_dir)], stdout=PIPE, shell=True)
-        process.communicate()
-        print('Defect classification process is completed')
+                        #%(dc_txt,buildID,facadeID,flyID,dc_out_dir)], stdout=PIPE, shell=True, universal_newlines=True)
+        while True:
+            out = process.stdout.read(1)
+            if out == '' and process.poll() != None:
+                print('Defect classification process is completed')
+                break
+            if out != '':
+                sys.stdout.write(out)
+                sys.stdout.flush()
+        #process.communicate()
+        
 
     
     def inference_ds(self, input_file=None, output_dir=None):
@@ -172,11 +188,17 @@ class Run():
                 os.mkdir(ds_out_dir)
         os.chdir('/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/')
         process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/test/test_v2_ourdata_ds.sh %s %s" 
-                         %(ds_txt,ds_out_dir)], stdout=PIPE, shell=True)
-        process.communicate()
-        print('Defect segmentation process is completed')
-
-    
+                         %(ds_txt,ds_out_dir)], stdout=PIPE, shell=True, universal_newlines=True)
+        while True:
+            out = process.stdout.read(1)
+            if out == '' and process.poll() != None:
+                print('Defect segmentation process is completed')
+                break
+            if out != '':
+                sys.stdout.write(out)
+                sys.stdout.flush()
+        #process.communicate()
+          
     #TODO: no ML model for thermal analysis now, add inference/training once model is confirmed
     #def thermal(self):
         '''
