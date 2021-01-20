@@ -57,3 +57,33 @@ def create_folder_list(dirs=None, model=None):
         f.write('\n'.join(dirs))
     
     return os.path.abspath(filename)
+
+def create_ss_img_label_list(folder_path=None, model=None):
+    '''
+    create a txt file which contains the absolute path of all image and its corresponding label.
+    the txt file will be fed into semantic segmantation model for training/validation.
+
+    Parameters
+    ----------
+    folder_path : TYPE, str 
+    model : TYPE, str
+    
+    Returns
+    -------
+    path of the txt file
+
+    '''
+    
+    img_path = os.path.join(folder_path, 'img')
+    label_path = os.path.join(folder_path, 'labels')
+    txt_file = model + '_img_label_list.txt'
+    filename = os.path.join(folder_path, txt_file)
+    with open(filename, 'w') as f:
+        f.writelines([os.path.join(img_path, img) +'\t'+ os.path.join(label_path, label)+'\n'
+                      for img,label in zip(os.listdir(img_path), os.listdir(label_path))])
+    
+    return os.path.abspath(filename)
+    
+if __name__ == '__main__':
+    txt = create_ss_img_label_list(r"C:\Users\cryst\Work\pipeline_design\Drone_io_pipeline-main\training", 'ss')
+    print(txt)

@@ -108,7 +108,7 @@ class Setting:
         
     def create_inference_frame(self):
         self.inf_frame = tk.Frame(self.bottom_frame, relief=tk.SUNKEN, borderwidth=1)
-        self.inf_frame.pack(side=tk.TOP)
+        self.inf_frame.pack(side=tk.LEFT)
         inf_title = tk.Label(self.inf_frame, text='Inference setting')
         inf_title.configure(font=("Times New Roman", 18, "bold"))
         inf_title.grid(row=0, columnspan=13)
@@ -123,39 +123,39 @@ class Setting:
         ds_title.configure(font=("Times New Roman", 13, "bold"))
         ds_title.grid(row=1, column=5, columnspan=2)
         
-        input_label = tk.Label(self.inf_frame, text='Input:')
+        input_label = tk.Label(self.inf_frame, text='Training dataset/Inference input:')
         input_label.configure(font=("Times New Roman", 11, "bold"))
         input_label.grid(row=2, column=0)
-        ss_dir_button = tk.Button(self.inf_frame, text='choose test image folder', 
+        ss_dir_button = tk.Button(self.inf_frame, text='choose training/test image folder', 
                                   command=self.get_ss_folder)
         ss_dir_button.grid(row=2, column=1, columnspan=2)
         self.ss_dir_label = tk.Label(self.inf_frame)
         self.ss_dir_label.grid(row=3, column=1, columnspan=2)
-        dc_dirs_button = tk.Button(self.inf_frame, text='choose test image folders', 
+        dc_dirs_button = tk.Button(self.inf_frame, text='choose training/test image folders', 
                                    command=self.get_c_folders)
         dc_dirs_button.grid(row=2, column=3, columnspan=2)
         self.dc_dirs_label = tk.Label(self.inf_frame)
         self.dc_dirs_label.grid(row=3, column=3, columnspan=2)
-        ds_dir_button = tk.Button(self.inf_frame, text='choose test image folder', 
+        ds_dir_button = tk.Button(self.inf_frame, text='choose training/test image folder', 
                                   command=self.get_ds_folder)
         ds_dir_button.grid(row=2, column=5, columnspan=2)
         self.ds_dir_label = tk.Label(self.inf_frame)
         self.ds_dir_label.grid(row=3, column=5, columnspan=2)
         
-        output_label = tk.Label(self.inf_frame, text='Output:')
+        output_label = tk.Label(self.inf_frame, text='Validation dataset/Inference output:')
         output_label.configure(font=("Times New Roman", 11, "bold"))
         output_label.grid(row=4, column=0)
-        ss_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
+        ss_out_dir_button = tk.Button(self.inf_frame, text='choose validation/output folder', 
                                       command=self.get_ss_out_folder)
         ss_out_dir_button.grid(row=4, column=1, columnspan=2)
         self.ss_out_label = tk.Label(self.inf_frame)
         self.ss_out_label.grid(row=5, column=1, columnspan=2)
-        dc_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
+        dc_out_dir_button = tk.Button(self.inf_frame, text='choose validation/output folder', 
                                       command=self.get_dc_out_folder)
         dc_out_dir_button.grid(row=4, column=3, columnspan=2)
         self.dc_out_label = tk.Label(self.inf_frame)
         self.dc_out_label.grid(row=5, column=3, columnspan=2)
-        ds_out_dir_button = tk.Button(self.inf_frame, text='choose output folder', 
+        ds_out_dir_button = tk.Button(self.inf_frame, text='choose validation/output folder', 
                                       command=self.get_ds_out_folder)
         ds_out_dir_button.grid(row=4, column=5, columnspan=2)
         self.ds_out_label = tk.Label(self.inf_frame)
@@ -188,11 +188,70 @@ class Setting:
         confirm_label.configure(font=("Times New Roman", 11, "bold"))
         confirm_label.grid(row=10, column=3)
         confirm_button = tk.Button(self.inf_frame, text="Confirm",
-                                   command=self.show, height=2, width=15)
+                                   command=self.show_inference, height=2, width=15)
         confirm_button.grid(row=10, column=4)
         
     def create_training_frame(self):
-        pass
+        self.train_frame = tk.Frame(self.bottom_frame, relief=tk.SUNKEN, borderwidth=1)
+        self.train_frame.pack(side=tk.TOP)
+        train_title = tk.Label(self.train_frame, text='Training setting')
+        train_title.configure(font=("Times New Roman", 18, "bold"))
+        train_title.grid(row=0, columnspan=13)
+        
+        ss_title = tk.Label(self.train_frame, text=' Semantic segmentation ')
+        ss_title.configure(font=("Times New Roman", 13, "bold"))
+        ss_title.grid(row=1, column=1, columnspan=2)
+        dc_title = tk.Label(self.train_frame, text=' Defect classification ')
+        dc_title.configure(font=("Times New Roman", 13, "bold"))
+        dc_title.grid(row=1, column=3, columnspan=2)
+        ds_title = tk.Label(self.train_frame, text=' Defect segmentation ')
+        ds_title.configure(font=("Times New Roman", 13, "bold"))
+        ds_title.grid(row=1, column=5, columnspan=2)
+        
+        train_label = tk.Label(self.train_frame, text='Training:')
+        train_label.configure(font=("Times New Roman", 11, "bold"))
+        train_label.grid(row=2, column=0)
+        ss_dir_button = tk.Button(self.train_frame, text='choose training dataset', 
+                                  command=self.get_ss_folder)
+        ss_dir_button.grid(row=2, column=1, columnspan=2)
+        self.ss_dir_label = tk.Label(self.train_frame)
+        self.ss_dir_label.grid(row=3, column=1, columnspan=2)
+        dc_dirs_button = tk.Button(self.train_frame, text='choose training dataset', 
+                                   command=self.get_c_folders)
+        dc_dirs_button.grid(row=2, column=3, columnspan=2)
+        self.dc_dirs_label = tk.Label(self.train_frame)
+        self.dc_dirs_label.grid(row=3, column=3, columnspan=2)
+        ds_dir_button = tk.Button(self.train_frame, text='choose training dataset', 
+                                  command=self.get_ds_folder)
+        ds_dir_button.grid(row=2, column=5, columnspan=2)
+        self.ds_dir_label = tk.Label(self.train_frame)
+        self.ds_dir_label.grid(row=3, column=5, columnspan=2)
+        
+        val_label = tk.Label(self.train_frame, text='Validation:')
+        val_label.configure(font=("Times New Roman", 11, "bold"))
+        val_label.grid(row=4, column=0)
+        ss_out_dir_button = tk.Button(self.train_frame, text='choose validation dataset', 
+                                      command=self.get_ss_out_folder)
+        ss_out_dir_button.grid(row=4, column=1, columnspan=2)
+        self.ss_out_label = tk.Label(self.train_frame)
+        self.ss_out_label.grid(row=5, column=1, columnspan=2)
+        dc_out_dir_button = tk.Button(self.train_frame, text='choose output folder', 
+                                      command=self.get_dc_out_folder)
+        dc_out_dir_button.grid(row=4, column=3, columnspan=2)
+        self.dc_out_label = tk.Label(self.train_frame)
+        self.dc_out_label.grid(row=5, column=3, columnspan=2)
+        ds_out_dir_button = tk.Button(self.train_frame, text='choose output folder', 
+                                      command=self.get_ds_out_folder)
+        ds_out_dir_button.grid(row=4, column=5, columnspan=2)
+        self.ds_out_label = tk.Label(self.train_frame)
+        self.ds_out_label.grid(row=5, column=5, columnspan=2)
+        
+        confirm_label = tk.Label(self.train_frame, text='To confirm: ')
+        confirm_label.configure(font=("Times New Roman", 11, "bold"))
+        confirm_label.grid(row=6, column=3)
+        confirm_button = tk.Button(self.train_frame, text="Confirm",
+                                   command=self.show_training, height=2, width=15)
+        confirm_button.grid(row=6, column=4)
         
     def init_gui(self):
         self.create_top_frame()
@@ -201,12 +260,12 @@ class Setting:
         self.create_inference_frame()
         #self.create_training_frame()
         
-    def show(self):
+    def show_inference(self):
         print( "You entered:")
         print('-'*20)
         print('-Run: ', self.get_mode())
-        print('-Chosen model(s): All/Semantic segmentation/Defect classification \
-              /Defect segmentation', self.get_model())
+        print('-Chosen model(s): Semantic segmentation/Defect classification \
+              /Defect segmentation/All', self.get_model())
         print('Input folders:')
         print("-Semantic segmentation image list: ", self.ss_dir)
         print('-Defect segmentation image list: ', self.ds_dir)
@@ -218,6 +277,24 @@ class Setting:
         print('Defect classification details:')
         print('-upload:', self.get_dc_details()[0])
         print('-buildID, facadeID, flyID: ', self.get_dc_details()[1:])        
+        
+        print( '*'*20)
+        
+    def show_training(self):
+        print( "You entered:")
+        print('-'*20)
+        print('-Run: ', self.get_mode())
+        print('-Chosen model(s): Semantic segmentation/Defect classification \
+              /Defect segmentation/All', self.get_model())
+        print('Training datasets:')
+        print("-Semantic segmentation: ", self.ss_dir)
+        print('-Defect segmentation: ', self.ds_dir)
+        print('-Defect classification: ', self.c_dirs)
+        print('Validation datasets:')
+        print("-Semantic segmentation: ", self.ss_out_dir)
+        print('-Defect segmentation: ', self.ds_out_dir)
+        print('-Defect classification: ', self.dc_out_dir)
+        print('Defect classification:')        
         
         print( '*'*20)
     

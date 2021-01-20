@@ -9,7 +9,7 @@ import sys
 from subprocess import PIPE, Popen
 import tkinter as tk
 from pipeline_UI import Setting
-from utils import create_image_list, create_folder_list
+from utils import create_image_list, create_folder_list, create_ss_img_label_list
 
 class Run():
     
@@ -34,18 +34,19 @@ class Run():
         
     def training(self):
         #TODO: consider running in parallel
-        if {self.ss, self.dc, self.ds, self.th} == {False}:
+        if {self.ss, self.dc, self.ds} == {False}:
             print('Please choose at least one ML model')
             return 
+        
         if self.ss:
             self.training_ss()
         if self.dc:
             self.training_dc()
         if self.ds:
             self.training_ds()
-        if self.th:
-            #TODO: might need to change the function once ML model is ready
-            self.thermal()
+        # if self.th:
+        #     #TODO: might need to change the function once ML model is ready
+        #     self.thermal()
     
     def inference(self):
         if {self.ss, self.dc, self.ds, self.all_model} == {False}:
@@ -108,13 +109,15 @@ class Run():
             ss_txt = input_file
         else:
             ss_txt = create_image_list(self.ss_dir, 'ss')
+        #execute ss model
         os.chdir('/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/')
         process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/test/test_v2_ourdata.sh %s %s" %(ss_txt, ss_out_dir)], 
                 stdout=PIPE, shell=True, universal_newlines=True)
+        #print real-time output
         while True:
             out = process.stdout.read(1)
             if out == '' and process.poll() != None:
-                print('Semantic segmentation process is completed')
+                print('Semantic segmentation inference process is completed')
                 break
             if out != '':
                 sys.stdout.write(out)
@@ -156,7 +159,7 @@ class Run():
         while True:
             out = process.stdout.read(1)
             if out == '' and process.poll() != None:
-                print('Defect classification process is completed')
+                print('Defect classification inference process is completed')
                 break
             if out != '':
                 sys.stdout.write(out)
@@ -192,39 +195,41 @@ class Run():
         while True:
             out = process.stdout.read(1)
             if out == '' and process.poll() != None:
-                print('Defect segmentation process is completed')
+                print('Defect segmentation inference process is completed')
                 break
             if out != '':
                 sys.stdout.write(out)
                 sys.stdout.flush()
         #process.communicate()
-          
-    #TODO: no ML model for thermal analysis now, add inference/training once model is confirmed
-    #def thermal(self):
-        '''
-        Run thermal analysis using IR images. 
-        - purpose: 
-        -----------
-        Output:
-            -
-        '''
-    
-        #th_txt = create_folder_list(self.th_dirs, 'th')
-        #if self.setting.th_out_dir is not None:
-            #th_out_dir = self.setting.th_out_dir+'/thermal/'
-            #if not os.path.exists(th_out_dir):
-            #    os.mkdir(th_out_dir)
-        #os.chdir('/home/paul/Workspaces/matlab/thermal')
-        #process = Popen(["python3 /home/paul/Workspaces/matlab/thermal/get_all_thermal_data.py -input_file %s -out_dir %s"
-        #                %(th_txt, th_out_dir)], stdout=PIPE, shell=True)
-        #process.communicate()
-        #print('thermal process completed')
     
     def training_ss(self):
         '''
         Run training on semantic segmentation model.
         '''
-        pass
+        if self.ss_dir is not None:
+            train_txt = create_ss_img_label_list(self.ss_dir, 'ss')
+        else:
+            print('Please choose training dataset')
+            
+        if self.setting.ss_out_dir is not None:
+            val_txt = create_ss_img_label_list(self.ss_out_dir, 'ss')
+        else:
+            print('Please choose validation dataset')
+            
+        #execute ss model
+        os.chdir('/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/')
+        process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/train/train_v2_ourdata.sh %s %s %s %s" \
+                         %(self.ss_dir, self.ss_out_dir, train_txt, val_txt)], 
+                         stdout=PIPE, shell=True, universal_newlines=True)
+        #print real-time output
+        while True:
+            out = process.stdout.read(1)
+            if out == '' and process.poll() != None:
+                print('Semantic segmentation training process is completed')
+                break
+            if out != '':
+                sys.stdout.write(out)
+                sys.stdout.flush()
     
     def training_dc(self):
         '''
@@ -236,6 +241,27 @@ class Run():
         Run training on defect segmentation model.
         '''
         pass
+    
+#TODO: no ML model for thermal analysis now, add inference/training once model is confirmed
+    #def thermal(self):
+        # '''
+        # Run thermal analysis using IR images. 
+        # - purpose: 
+        # -----------
+        # Output:
+        #     -
+        # '''
+    
+        #th_txt = create_folder_list(self.th_dirs, 'th')
+        #if self.setting.th_out_dir is not None:
+            #th_out_dir = self.setting.th_out_dir+'/thermal/'
+            #if not os.path.exists(th_out_dir):
+            #    os.mkdir(th_out_dir)
+        #os.chdir('/home/paul/Workspaces/matlab/thermal')
+        #process = Popen(["python3 /home/paul/Workspaces/matlab/thermal/get_all_thermal_data.py -input_file %s -out_dir %s"
+        #                %(th_txt, th_out_dir)], stdout=PIPE, shell=True)
+        #process.communicate()
+        #print('thermal process completed')
     
 def main():
     r = Run()
