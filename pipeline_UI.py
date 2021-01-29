@@ -25,6 +25,9 @@ class Setting:
     
     def get_model(self):
         return self.ss.get(), self.dc.get(), self.ds.get(), self.all_model.get()
+    
+    def get_dataset_prep(self):
+        return self.dataset.get(), self.split_ratio.get()
         
     def get_ss_folder(self, even=None):
         self.ss_dir = filedialog.askdirectory()
@@ -80,38 +83,46 @@ class Setting:
         tk.Label(mode_frame, text='Please select training or inference:').grid(row=1, column=0)
         self.mode = tk.StringVar()
         tk.OptionMenu(mode_frame, self.mode, "Training", "Inference").grid(row=1, column=1)
+        
+        tk.Label(mode_frame, text='If training, require dataset preparation: ').grid(row=2, column=0)
+        self.dataset = tk.IntVar()
+        tk.Checkbutton(mode_frame, variable=self.dataset).grid(row=2, column=1)
+        
+        tk.Label(mode_frame, text='Train/Test split ratio: ').grid(row=3, column=0)
+        self.split_ratio = tk.DoubleVar()
+        tk.Entry(mode_frame, width=6, textvariable=self.split_ratio).grid(row=3, column=1)
  
         model_title = tk.Label(mode_frame, text='Please indicate which model/models to run:')
         model_title.configure(font='Arial 11')
-        model_title.grid(row=2, column=0, columnspan=10)
+        model_title.grid(row=4, column=0, columnspan=10)
         
         all_model = tk.Label(mode_frame, text='All: ')
         all_model.configure(font=("Times New Roman", 11, "bold"))
-        all_model.grid(row=3, column=0)
+        all_model.grid(row=5, column=0)
         self.all_model = tk.StringVar()
-        tk.OptionMenu(mode_frame, self.all_model, "Yes", "No").grid(row=3, column=1)
+        tk.OptionMenu(mode_frame, self.all_model, "Yes", "No").grid(row=5, column=1)
         ss = tk.Label(mode_frame, text='Semantic segmentation: ')
         ss.configure(font=("Times New Roman", 11, "bold"))
-        ss.grid(row=4, column=0)
+        ss.grid(row=6, column=0)
         self.ss = tk.StringVar()
-        tk.OptionMenu(mode_frame, self.ss, "Yes", "No").grid(row=4, column=1)
+        tk.OptionMenu(mode_frame, self.ss, "Yes", "No").grid(row=6, column=1)
         dc = tk.Label(mode_frame, text='Defect classification: ')
         dc.configure(font=("Times New Roman", 11, "bold"))
-        dc.grid(row=5, column=0)
+        dc.grid(row=7, column=0)
         self.dc = tk.StringVar()
-        tk.OptionMenu(mode_frame, self.dc, "Yes", "No").grid(row=5, column=1)
+        tk.OptionMenu(mode_frame, self.dc, "Yes", "No").grid(row=7, column=1)
         ds = tk.Label(mode_frame, text='Defect segmentation: ')
         ds.configure(font=("Times New Roman", 11, "bold"))
-        ds.grid(row=6, column=0)
+        ds.grid(row=8, column=0)
         self.ds = tk.StringVar()
-        tk.OptionMenu(mode_frame, self.ds, "Yes", "No").grid(row=6, column=1)
+        tk.OptionMenu(mode_frame, self.ds, "Yes", "No").grid(row=8, column=1)
         
     def create_inference_frame(self):
         self.inf_frame = tk.Frame(self.bottom_frame, relief=tk.SUNKEN, borderwidth=1)
         self.inf_frame.pack(side=tk.LEFT)
-        inf_title = tk.Label(self.inf_frame, text='Inference setting')
-        inf_title.configure(font=("Times New Roman", 18, "bold"))
-        inf_title.grid(row=0, columnspan=13)
+        # inf_title = tk.Label(self.inf_frame, text='Inference setting')
+        # inf_title.configure(font=("Times New Roman", 18, "bold"))
+        # inf_title.grid(row=0, columnspan=13)
         
         ss_title = tk.Label(self.inf_frame, text=' Semantic segmentation ')
         ss_title.configure(font=("Times New Roman", 13, "bold"))
@@ -264,6 +275,7 @@ class Setting:
         print( "You entered:")
         print('-'*20)
         print('-Run: ', self.get_mode())
+        print('Require dataset preparation: ', self.get_dataset_prep())
         print('-Chosen model(s): Semantic segmentation/Defect classification \
               /Defect segmentation/All', self.get_model())
         print('Input folders:')
@@ -284,6 +296,7 @@ class Setting:
         print( "You entered:")
         print('-'*20)
         print('-Run: ', self.get_mode())
+        print('Require dataset preparation: ', self.get_dataset_prep())
         print('-Chosen model(s): Semantic segmentation/Defect classification \
               /Defect segmentation/All', self.get_model())
         print('Training datasets:')

@@ -9,6 +9,8 @@ import sys
 from subprocess import PIPE, Popen
 import tkinter as tk
 from pipeline_UI import Setting
+from image_preprocess import crop, dir_create, split_patch
+from build_dataset import train_val_split, create_dirs
 from utils import create_image_list, create_folder_list, create_ss_img_label_list
 
 class Run():
@@ -31,7 +33,7 @@ class Run():
                                         for model in self.setting.get_model()]
 
         self.ss_dir, self.dc_dirs, self.ds_dir = self.setting.ss_dir, self.setting.c_dirs, self.setting.ds_dir
-        
+        self.data_prep, self.split_ratio = self.setting.get_dataset_prep()
     def training(self):
         #TODO: consider running in parallel
         if {self.ss, self.dc, self.ds} == {False}:
@@ -39,10 +41,16 @@ class Run():
             return 
         
         if self.ss:
+            if self.data_prep==1:
+                self.dataset_preprocess(self.ss_dir, self.setting.ss_out_dir)
             self.training_ss()
         if self.dc:
+            if self.data_prep==1:
+                self.dataset_preprocess(self.dc_dirs[0], self.setting.dc_out_dir)
             self.training_dc()
         if self.ds:
+            if self.data_prep==1:
+                self.dataset_preprocess(self.ds_dir, self.setting.ds_out_dir)
             self.training_ds()
         # if self.th:
         #     #TODO: might need to change the function once ML model is ready
@@ -242,6 +250,33 @@ class Run():
         '''
         pass
     
+    def dataset_preprocess(self, input_path, output_path):
+        '''
+        prepare dataset ready for training.
+
+        '''
+        #TODO: change the commend line to run labelme2voc.py
+        os.chdir(r'C:\Users\cryst\Anaconda3\Lib\site-packages\labelme\examples\instance_segmentation')
+        process = Popen(["python labelme2voc.py %s %s --labels %s" \
+                         %(input_path, output_path, os.path.join(input_path, 'labels.txt'))], 
+                         stdout=PIPE, shell=True, universal_newlines=True)
+        while True:
+            out = process.stdout.read(1)
+            if out == '' and process.poll() != None:
+                break
+            if out != '':
+                sys.stdout.write(out)
+                sys.stdout.flush()
+                
+        # image1_path = os.path.join(output_path, 'JPEGImages')
+        # label1_path = os.path.join(output_path, 'SegmentationClassPNG')
+        # split_patch(image1_path, label1_path, output_path, 480, 640)
+        # image2_path = os.path.join(output_path, 'images')
+        # label2_path = os.path.join(output_path, 'labels')
+        # if self.split_ratio != 0.0:
+        #     train_val_split(image2_path, label2_path, output_path, self.split_ratio)
+        # else:
+        #     train_val_split(image2_path, label2_path, output_path)
 #TODO: no ML model for thermal analysis now, add inference/training once model is confirmed
     #def thermal(self):
         # '''

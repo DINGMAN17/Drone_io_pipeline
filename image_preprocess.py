@@ -13,20 +13,6 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from PIL import Image
 
-def rescale(filename):
-    '''
-    Rescale image to 640x480 (might not be useful, depends on image quality)
-
-    Parameters
-    ----------
-    filename : str
-        name of the image file.
-    '''
-    img = Image.open(filename)
-    size = (640, 480)
-    img.thumbnail(size, Image.ANTIALIAS)
-    img.save(filename)
-
 def crop(input_file, height, width):
     img = Image.open(input_file)
     img_width, img_height = img.size
@@ -46,36 +32,47 @@ def dir_create(path):
     if not os.path.exists(path):
         os.makedirs(path)
             
-def split(input_img_dir, input_label_dir, out_dir, height, width, start_num):
+def split_patch(input_img_dir, input_label_dir, out_dir, height, width, start_num=1):
     image_dir = os.path.join(out_dir, 'images')
     label_dir = os.path.join(out_dir, 'labels')
-    dir_create(out_dir)
+    if not os.path.exists(out_dir):
+        os.mkdir(out_dir)
     dir_create(image_dir)
     dir_create(label_dir)
     img_list = [f for f in
                 os.listdir(input_img_dir)
                 if os.path.isfile(os.path.join(input_img_dir, f))]
     file_num = 0
+    rename_image_num = 0
+    rename_label_num = 0
     for infile in img_list:
         infile_path = os.path.join(input_img_dir, infile)
         for k, piece in enumerate(crop(infile_path,
                                        height, width), start_num):
             img = Image.new('RGB', (width, height), 255)
             img.paste(piece)
+            # img_path = os.path.join(image_dir, 
+            #                         infile.split('.')[0]+ '_'
+            #                         + str(k).zfill(4) + '.png')
             img_path = os.path.join(image_dir, 
-                                    infile.split('.')[0]+ '_'
-                                    + str(k).zfill(1) + '.png')
+                                    str(rename_image_num).zfill(4) + '.jpg')
             img.save(img_path)
+            rename_image_num += 1
+            
         infile_path = os.path.join(input_label_dir,
                                    infile.split('.')[0] + '.png')
+
         for k, piece in enumerate(crop(infile_path,
                                        height, width), start_num):
-            msk = Image.new('RGB', (width, height), 255)
-            msk.paste(piece)
-            msk_path = os.path.join(label_dir,
-                                    infile.split('.')[0] + '_'
-                                    + str(k).zfill(1) + '.png')
-            msk.save(msk_path)
+            label = Image.new('RGB', (width, height), 255)
+            label.paste(piece)
+            # label_path = os.path.join(label_dir,
+            #                         infile.split('.')[0] + '_'
+            #                         + str(k).zfill(1) + '.png')
+            label_path = os.path.join(label_dir, 
+                                    str(rename_label_num).zfill(4) + '.png')
+            label.save(label_path)
+            rename_label_num += 1
         file_num += 1
         sys.stdout.write("\rFile %s was processed." % file_num)
         sys.stdout.flush()
@@ -86,8 +83,7 @@ def image_patch_plotter(images_path, offset):
 
     Parameters
     ----------
-    images_list : list
-        list of patches to render.
+    images_path : str
     offset : int
     '''
     images_list = glob.glob(os.path.join(images_path, '*.png'))
@@ -129,16 +125,22 @@ def image_label_plotter(image_path, label_path, image_number=None):
     ax1.imshow(image)
     ax2.imshow(label)
     ax2.set_title('Label ' + str(image_number))
+     
+def rescale(filename):
+    '''
+    Rescale image to 640x480 (might not be useful for XT2 images, depends on image quality)
+    '''
+    img = Image.open(filename)
+    size = (640, 480)
+    img.thumbnail(size, Image.ANTIALIAS)
+    img.save(filename)
 
 if __name__ == '__main__':
-    # image_path = r'C:\Users\cryst\Work\Facade_inspection\Test_image\Photo\image'
-    # label_path = r'C:\Users\cryst\Work\Facade_inspection\Test_image\Photo\label'
-    # image_label_plotter(image_path, label_path)
-    # output_images_list = glob.glob(r'C:\Users\cryst\Work\Facade_inspection\Test_image\Photo\test\images' + '\*.png')
-    # output_labels_list = glob.glob(r'C:\Users\cryst\Work\Facade_inspection\Test_image\Photo\test\labels' + '\*.png')  
-    image_patch_plotter(r'C:\Users\cryst\Work\Facade_inspection\Test_image\Photo\test\labels', 0)
+     image_path = r'C:\Users\cryst\Work\Facade_inspection\Test_image\Photo\output_1to51\JPEGImages'
+     label_path = r'C:\Users\cryst\Work\Facade_inspection\Test_image\Photo\output_1to51\SegmentationClassPNG'
+     out_path = r'C:\Users\cryst\Work\Facade_inspection\Test_image\Photo\test'
+     image_label_plotter(image_path, label_path) 
+    # image_patch_plotter(r'C:\Users\cryst\Work\Facade_inspection\Test_image\Photo\test\labels', 5)
     #image_part_plotter(output_labels_list, 0)
-    # split(r'C:\Users\cryst\Work\Facade_inspection\Test_image\Photo\image', 
-    #       r'C:\Users\cryst\Work\Facade_inspection\Test_image\Photo\label', 
-    #       r'C:\Users\cryst\Work\Facade_inspection\Test_image\Photo\test', 480, 640, 1)
+     split_patch(image_path, label_path, out_path, 480, 640, 1)
     #rescale_image('C:/Users/cryst/Work/Facade_inspection/pipeline_design/DJI_0015_org.jpg')
