@@ -218,11 +218,13 @@ class Run():
             train_txt = create_ss_img_label_list(self.ss_dir, 'ss')
         else:
             print('Please choose training dataset')
+            return
             
         if self.setting.ss_out_dir is not None:
             val_txt = create_ss_img_label_list(self.ss_out_dir, 'ss')
         else:
             print('Please choose validation dataset')
+            return
             
         #execute ss model
         os.chdir('/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/')
@@ -256,9 +258,20 @@ class Run():
 
         '''
         #TODO: change the commend line to run labelme2voc.py
-        os.chdir(r'C:\Users\cryst\Anaconda3\Lib\site-packages\labelme\examples\instance_segmentation')
-        process = Popen(["python labelme2voc.py %s %s --labels %s" \
-                         %(input_path, output_path, os.path.join(input_path, 'labels.txt'))], 
+        if input_path is not None:
+        	input_path = input_path+'/'
+            
+        else:
+        	print('Please indicate the input directory')
+        	return
+     
+        if not os.path.exists(output_path):
+            os.mkdir(output_path)
+        output_path = output_path+'/'
+        output_path_labelme = output_path +'/labelme_output/'
+
+        process = Popen(["python /Data/Research/git/labelme/examples/instance_segmentation/labelme2voc.py %s %s --labels %s" \
+                         %(input_path, output_path_labelme, os.path.join(input_path, 'class_names.txt'))], 
                          stdout=PIPE, shell=True, universal_newlines=True)
         while True:
             out = process.stdout.read(1)
@@ -268,15 +281,16 @@ class Run():
                 sys.stdout.write(out)
                 sys.stdout.flush()
                 
-        # image1_path = os.path.join(output_path, 'JPEGImages')
-        # label1_path = os.path.join(output_path, 'SegmentationClassPNG')
-        # split_patch(image1_path, label1_path, output_path, 480, 640)
-        # image2_path = os.path.join(output_path, 'images')
-        # label2_path = os.path.join(output_path, 'labels')
-        # if self.split_ratio != 0.0:
-        #     train_val_split(image2_path, label2_path, output_path, self.split_ratio)
-        # else:
-        #     train_val_split(image2_path, label2_path, output_path)
+        image1_path = os.path.join(output_path_labelme, 'JPEGImages')
+        label1_path = os.path.join(output_path_labelme, 'SegmentationClassPNG')
+        split_patch(image1_path, label1_path, output_path, 480, 640)
+        image2_path = os.path.join(output_path, '640x480_images')
+        label2_path = os.path.join(output_path, '640x480_labels')
+        if self.split_ratio != 0.0:
+            train_val_split(image2_path, label2_path, output_path, self.split_ratio)
+        else:
+            train_val_split(image2_path, label2_path, output_path)
+            
 #TODO: no ML model for thermal analysis now, add inference/training once model is confirmed
     #def thermal(self):
         # '''

@@ -33,8 +33,8 @@ def dir_create(path):
         os.makedirs(path)
             
 def split_patch(input_img_dir, input_label_dir, out_dir, height, width, start_num=1):
-    image_dir = os.path.join(out_dir, 'images')
-    label_dir = os.path.join(out_dir, 'labels')
+    image_dir = os.path.join(out_dir, '640x480_images')
+    label_dir = os.path.join(out_dir, '640x480_labels')
     if not os.path.exists(out_dir):
         os.mkdir(out_dir)
     dir_create(image_dir)
