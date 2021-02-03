@@ -32,10 +32,17 @@ def dir_create(path):
 	if not os.path.exists(path):
 		os.makedirs(path)
 			
-def split_patch(input_img_dir, input_label_dir, out_dir, height, width, start_num=1, copy_prev_dataset=True):
-
-	rename_label_num, image_dir, label_dir = copy_previous_dataset(out_dir, copy_prev_dataset)
-	rename_image_num = rename_label_num
+def split_patch(input_img_dir, input_label_dir, prev_path, new_path, 
+				height, width, start_num=1, copy_prev_dataset=True):
+	
+	image_dir = os.path.join(new_path, 'all', '640x480_images')   
+	label_dir = os.path.join(new_path, 'all', '640x480_labels')
+	pre_path_img = os.path.join(prev_path, 'all', '640x480_images')
+	pre_path_labels = os.path.join(prev_path, 'all', '640x480_labels')
+	if copy_prev_dataset:
+		rename_label_num = rename_image_num = copy_previous_dataset(pre_path_img, pre_path_labels, image_dir, label_dir)[0]
+	else:
+		rename_image_num = rename_label_num = 0
 
 	img_list = [f for f in
 				os.listdir(input_img_dir)
@@ -74,10 +81,32 @@ def split_patch(input_img_dir, input_label_dir, out_dir, height, width, start_nu
 		sys.stdout.write("\rFile %s was processed." % file_num)
 		sys.stdout.flush()
 
-def copy_previous_dataset(out_dir, copy_prev_dataset=True):
+def copy_previous_dataset(pre_path_img, pre_path_labels, image_dir, label_dir):
 	'''
 	combine the existing dataset with the new dataset by copying 
 	the previous dataset to the new dataset directory
+	Note: must follow the naming convention. e.g 'dataset1', 'dataset2'
+	'''
+	#copy previous dataset to the new dataset directory
+	filenames = [f for f in
+				 os.listdir(pre_path_img)
+				 if os.path.isfile(os.path.join(pre_path_img, f))]
+	for item in filenames:
+		source_img = os.path.join(pre_path_img, item)
+		source_label = os.path.join(pre_path_labels,
+								   item.split('.')[0] + '.png')
+		shutil.copy2(source_img, image_dir)
+		shutil.copy2(source_label, label_dir)
+
+	#get the maximum file name number for renaming the new dataset
+	rename_num = len(os.listdir(image_dir))
+	print("\r%s images  was copied from previous dataset." % rename_num)
+	
+	return rename_num, image_dir, label_dir
+
+def create_current_dir(out_dir):
+	'''
+	reate the directory to store new dataset based on the previous dir name
 	Note: must follow the naming convention. e.g 'dataset1', 'dataset2'
 	'''
 	#get directory names of previous and current dataset
@@ -90,36 +119,18 @@ def copy_previous_dataset(out_dir, copy_prev_dataset=True):
 	name = list(prev_dataset)
 	name[-1] = str(num)
 	new_dataset = ''.join(name)
-	prev_path_img = os.path.join(out_dir, prev_dataset, 'all', 'img')
-	prev_path_labels = os.path.join(out_dir, prev_dataset, 'all', 'labels')
+	prev_path = os.path.join(out_dir, prev_dataset)
 	
 	#create dirs for the new dataset
-	new_path = os.path.join(out_dir, new_dataset)    
-	image_dir = os.path.join(new_path, 'all', 'img')
-	label_dir = os.path.join(new_path, 'all', 'labels')
+	new_path = os.path.join(out_dir, new_dataset) 
+	image_dir = os.path.join(new_path, 'all', '640x480_images')   
+	label_dir = os.path.join(new_path, 'all', '640x480_labels')
 	if not os.path.exists(new_path):
 		os.mkdir(new_path)
 	dir_create(image_dir)
 	dir_create(label_dir)
 
-	rename_num = 0
-	if copy_prev_dataset:
-	#copy previous dataset to the new dataset directory
-		filenames = [f for f in
-					 os.listdir(prev_path_img)
-					 if os.path.isfile(os.path.join(prev_path_img, f))]
-		for item in filenames:
-			source_img = os.path.join(prev_path_img, item)
-			source_label = os.path.join(prev_path_labels,
-									   item.split('.')[0] + '.png')
-			shutil.copy2(source_img, image_dir)
-			shutil.copy2(source_label, label_dir)
-
-		#get the maximum file name number for renaming the new dataset
-		rename_num = len(os.listdir(image_dir))
-		print("\r%s images  was copied from previous dataset." % rename_num)
-	
-	return rename_num, image_dir, label_dir
+	return prev_path, new_path
 	
 		
 def image_patch_plotter(images_path, offset, img_type='png'):
@@ -187,9 +198,18 @@ if __name__ == '__main__':
 	 image_path = r'C:\Users\cryst\Work\Facade_inspection\pipeline_design\Drone_io_pipeline-main\Test_image_preprocess\dataset\dataset3\labelme_output\JPEGImages'
 	 label_path = r'C:\Users\cryst\Work\Facade_inspection\pipeline_design\Drone_io_pipeline-main\Test_image_preprocess\dataset\dataset3\labelme_output\SegmentationClassPNG'
 	 out_path = r'C:\Users\cryst\Work\Facade_inspection\pipeline_design\Drone_io_pipeline-main\Test_image_preprocess\dataset'
+	 prev_path, new_path = create_current_dir(out_path)
+	 image_dir = os.path.join(new_path, 'all', '640x480_images')   
+	 label_dir = os.path.join(new_path, 'all', '640x480_labels')
+	 pre_path_img = os.path.join(prev_path, 'all', '640x480_images')
+	 pre_path_labels = os.path.join(prev_path, 'all', '640x480_labels')
+	 #copy_previous_dataset(pre_path_img, pre_path_labels, image_dir, label_dir)
+	 #print(os.listdir(r'C:\Users\cryst\Work\Facade_inspection\pipeline_design\Drone_io_pipeline-main\Test_image_preprocess\dataset\dataset3\all\640x480_images'))
+	 split_patch(image_path, label_path, prev_path, new_path, 480, 640, 1, True)
+
 	 #image_label_plotter(image_path, label_path) 
 	 #image_patch_plotter(r'C:\Users\cryst\Work\Facade_inspection\pipeline_design\Drone_io_pipeline-main\Test_image_preprocess\dataset_demo\output\640x480_images', 9, 'jpg')
 	 #image_patch_plotter(r'C:\Users\cryst\Work\Facade_inspection\pipeline_design\Drone_io_pipeline-main\Test_image_preprocess\dataset_demo\output\640x480_labels', 9)
 	#image_part_plotter(output_labels_list, 0)
-	 split_patch(image_path, label_path, out_path, 480, 640, 1, True)
+	 #split_patch(image_path, label_path, out_path, 480, 640, 1, True)
 	#rescale_image('C:/Users/cryst/Work/Facade_inspection/pipeline_design/DJI_0015_org.jpg')

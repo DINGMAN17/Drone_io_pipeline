@@ -58,7 +58,7 @@ def create_folder_list(dirs=None, model=None):
     
     return os.path.abspath(filename)
 
-def create_ss_img_label_list(folder_path=None, model=None):
+def create_img_label_list(folder_path=None, model=None):
     '''
     create a txt file which contains the absolute path of all image and its corresponding label.
     the txt file will be fed into semantic segmantation model for training/validation.
@@ -79,8 +79,8 @@ def create_ss_img_label_list(folder_path=None, model=None):
     txt_file = model + '_img_label_list.txt'
     filename = os.path.join(folder_path, txt_file)
     with open(filename, 'w') as f:
-        f.writelines([os.path.join(img_path, img) +'\t'+ os.path.join(label_path, label)+'\n'
-                      for img,label in zip(os.listdir(img_path), os.listdir(label_path))])
+        f.writelines([os.path.join(img_path, img) +'\t'+ os.path.join(label_path, img.split('.')[0] + '.png')+'\n'
+                      for img in os.listdir(img_path)])
     
     return os.path.abspath(filename)
     

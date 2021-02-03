@@ -9,9 +9,9 @@ import sys
 from subprocess import PIPE, Popen
 import tkinter as tk
 from pipeline_UI import Setting
-from image_preprocess import crop, dir_create, split_patch
+from image_preprocess import crop, dir_create, split_patch, create_current_dir
 from build_dataset import train_val_split, create_dirs
-from utils import create_image_list, create_folder_list, create_ss_img_label_list
+from utils import create_image_list, create_folder_list, create_img_label_list
 
 class Run():
     
@@ -42,7 +42,7 @@ class Run():
         
         if self.ss:
             if self.data_prep==1:
-                self.dataset_preprocess(self.ss_dir, self.setting.ss_out_dir)
+                new_path = self.dataset_preprocess(self.ss_dir, self.setting.ss_out_dir)
             self.training_ss()
         if self.dc:
             if self.data_prep==1:
@@ -50,8 +50,10 @@ class Run():
             self.training_dc()
         if self.ds:
             if self.data_prep==1:
-                self.dataset_preprocess(self.ds_dir, self.setting.ds_out_dir)
-            self.training_ds()
+                new_path = self.dataset_preprocess(self.ds_dir, self.setting.ds_out_dir)
+                self.training_ds(new_path)
+            else:
+                self.training_ds()
         # if self.th:
         #     #TODO: might need to change the function once ML model is ready
         #     self.thermal()
@@ -246,18 +248,29 @@ class Run():
         Run training on defect classification model.
         '''
         pass
-    def training_ds(self):
+
+    def training_ds(self, new_path=None):
         '''
         Run training on defect segmentation model.
         '''
-        pass
-    
+        if self.data_prep==0:
+            if self.ss_dir is not None and self.setting.ss_out_dir is not None:
+                train_txt = create_img_label_list(self.ss_dir, 'ds')
+                val_txt = create_img_label_list(self.ss_out_dir, 'ds')
+            else:
+                print('Please choose training/validation dataset')
+                return
+        else:
+            train_path = os.path.join(new_path, 'train')   
+            test_path = os.path.join(new_path, 'test')
+            train_txt = create_img_label_list(train_path, 'ds')
+            val_txt = create_img_label_list(test_path, 'ds')
+                
     def dataset_preprocess(self, input_path, output_path):
         '''
         prepare dataset ready for training.
 
         '''
-        #TODO: change the commend line to run labelme2voc.py
         if input_path is not None:
         	input_path = input_path+'/'
             
@@ -267,11 +280,14 @@ class Run():
      
         if not os.path.exists(output_path):
             os.mkdir(output_path)
-        output_path = output_path+'/'
-        output_path_labelme = output_path +'/labelme_output/'
+        #output_path = output_path+'/'
+        prev_path, new_path = create_current_dir(output_path)
+        labelme_dir = new_path +'/labelme_output/'
+        image_dir = os.path.join(new_path, 'all', '640x480_images')   
+        label_dir = os.path.join(new_path, 'all', '640x480_labels')
 
         process = Popen(["python /Data/Research/git/labelme/examples/instance_segmentation/labelme2voc.py %s %s --labels %s" \
-                         %(input_path, output_path_labelme, os.path.join(input_path, 'class_names.txt'))], 
+                         %(input_path, labelme_dir, os.path.join(input_path, 'class_names.txt'))], 
                          stdout=PIPE, shell=True, universal_newlines=True)
         while True:
             out = process.stdout.read(1)
@@ -281,15 +297,16 @@ class Run():
                 sys.stdout.write(out)
                 sys.stdout.flush()
                 
-        image1_path = os.path.join(output_path_labelme, 'JPEGImages')
-        label1_path = os.path.join(output_path_labelme, 'SegmentationClassPNG')
-        split_patch(image1_path, label1_path, output_path, 480, 640)
-        image2_path = os.path.join(output_path, '640x480_images')
-        label2_path = os.path.join(output_path, '640x480_labels')
+        image1_path = os.path.join(labelme_dir, 'JPEGImages')
+        label1_path = os.path.join(labelme_dir, 'SegmentationClassPNG')
+        split_patch(image1_path, label1_path, prev_path, new_path, 480, 640)
+        
         if self.split_ratio != 0.0:
-            train_val_split(image2_path, label2_path, output_path, self.split_ratio)
+            train_val_split(image_dir, label_dir, new_path, self.split_ratio)
         else:
-            train_val_split(image2_path, label2_path, output_path)
+            train_val_split(image_dir, label_dir, new_path)
+
+        return new_path
             
 #TODO: no ML model for thermal analysis now, add inference/training once model is confirmed
     #def thermal(self):
