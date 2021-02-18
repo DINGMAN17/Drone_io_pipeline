@@ -3,9 +3,9 @@ import flirimageextractor
 from matplotlib import pyplot as plt, cm
 import numpy as np
 
-def extract_data_from_dir(input_img_dir, palettes=None, minTemp=None, maxTemp=None):
+def extract_data_from_dir(input_img_dir, palettes=None, minTemp=32, maxTemp=35):
 
-	flir = flirimageextractor.FlirImageExtractor(palettes=[cm.gray])
+	flir = flirimageextractor.FlirImageExtractor(palettes=[cm.gray_r])
 	img_list = [f for f in
 				os.listdir(input_img_dir)
 				if os.path.isfile(os.path.join(input_img_dir, f))]
@@ -24,7 +24,7 @@ def extract_data_from_dir(input_img_dir, palettes=None, minTemp=None, maxTemp=No
 		flir.process_image(img_path)
 		thermal_image_np = flir.get_thermal_np()
 		np.save(out_path_np, thermal_image_np)
-		#print(type(thermal_image_np))
+		#print(flir.get_rgb_np())
 
 		#IR image processed with fixed temperature range
 		flir.save_images(minTemp, maxTemp)
@@ -34,5 +34,5 @@ def extract_data_from_dir(input_img_dir, palettes=None, minTemp=None, maxTemp=No
 		fig.colorbar(img, ax=ax)
 		fig.savefig(out_path_img_vis)
 
-extract_data_from_dir('/home/paul/Workspaces/python/Drone_io_pipeline-main/Inference_Demo/02_outdoor_ground/')
+extract_data_from_dir('/home/paul/Workspaces/python/Drone_io_pipeline-main/Inference_Demo/02_outdoor_ground_results/')
         
