@@ -18,7 +18,7 @@ def remove_noise_check(input_dir, remove_noise):
         ret,thresh = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
     else:
         ret,thresh = cv2.threshold(img,240,255,cv2.THRESH_BINARY)
-    ret,thresh = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
+    
     if remove_noise is not None:
         top,bottom,left,right = remove_noise
         if top is not None:
@@ -41,7 +41,7 @@ def find_features(input_dir, draw=False, remove_noise=(950,2000,1150,3000),
     Parameters
     ----------
     input_dir : str
-    draw : image(array), optional
+    draw : Boolean, optional
         Draw the middle points on each feature. The default is False.
     remove_noise: list, optional
         remove white noise, follow the sequence [top, bottom, left, right]
@@ -172,12 +172,17 @@ def find_features(input_dir, draw=False, remove_noise=(950,2000,1150,3000),
         np.save(f, features)
         print('saved', filename)
     return features
-       
+
+
+    
+    
+    
+    
 if __name__ == '__main__':
     
-    # print(remove_noise_check(r'IRgroundtest1_2021_0303/un_distorted/undistortDJI_0925_R_thermal_gray.jpg', 
-    #                           (80, 380, 30, None)))
-    print(find_features(r'IRgroundtest1_2021_0303/un_distorted/undistortDJI_0925_R_thermal_gray.jpg', 
-                        True, (80, 380, 30, None), 5, 8))
+    # print(remove_noise_check(r'IRgroundtest1_2021_0303/un_distorted/undistortDJI_0858.jpg', 
+    #                           None))
+    print(find_features(r'IRgroundtest1_2021_0303/un_distorted/undistortDJI_0926.jpg', 
+                        True,(950,2000,1150,3000)))
 
 
