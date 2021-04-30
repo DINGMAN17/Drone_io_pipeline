@@ -5,6 +5,7 @@ Created on Sat Jan  9 16:21:46 2021
 @author: cryst
 """
 import os
+#import cv2
 
 def create_image_list(folder_path=None, model=None, file_type='.JPG'):
     '''
@@ -58,7 +59,7 @@ def create_folder_list(dirs=None, model=None):
     
     return os.path.abspath(filename)
 
-def create_img_label_list(folder_path=None, model=None):
+def create_ss_img_label_list(folder_path=None, model=None):
     '''
     create a txt file which contains the absolute path of all image and its corresponding label.
     the txt file will be fed into semantic segmantation model for training/validation.
@@ -79,11 +80,57 @@ def create_img_label_list(folder_path=None, model=None):
     txt_file = model + '_img_label_list.txt'
     filename = os.path.join(folder_path, txt_file)
     with open(filename, 'w') as f:
-        f.writelines([os.path.join(img_path, img) +'\t'+ os.path.join(label_path, img.split('.')[0] + '.png')+'\n'
-                      for img in os.listdir(img_path)])
+        f.writelines([os.path.join(img_path, img) +'\t'+ os.path.join(label_path, label)+'\n'
+                      for img,label in zip(os.listdir(img_path), os.listdir(label_path))])
     
     return os.path.abspath(filename)
+
+def create_dirs(dir_list, parent_dir):
+    '''
+    create a list of sub-folders under parent folder
+
+    '''
+    for folder in dir_list:
+            folder = os.path.join(parent_dir, folder)
+            if not os.path.exists(folder):
+                os.mkdir(folder)
+
+def rename_dir(folder, start_no=1):
+    '''
+    rename the images in each facade folder, starting from DJI_0001.JPG
+
+    '''
+    img_list = [os.path.splitext(f) for f in os.listdir(folder)
+				    if os.path.isfile(os.path.join(folder, f))]
+
+    num_img = len(img_list)-1
+    rename_image_num = start_no + num_img
+    
+    for img in sorted(img_list, reverse=True):
+        if img[1].lower() in ['.png', '.jpg', '.jpeg']:
+            img_path = os.path.join(folder, 
+								'DJI_'+str(rename_image_num).zfill(4)+img[1])
+
+            rename_image_num -= 1
+            os.rename(os.path.join(folder, img[0]+img[1]), img_path)
+            
+    return len(img_list)
+
+# def transparent_background(file):
+#     '''
+#     remove the black background of an image (for defect segmentation outputs)
+
+#     '''
+#     src = cv2.imread(file, 1)
+#     tmp = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
+#     _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
+#     b, g, r = cv2.split(src)
+#     rgba = [b,g,r, alpha]
+#     dst = cv2.merge(rgba,4)
+    
+#     cv2.imwrite(file, dst)
     
 if __name__ == '__main__':
+    #transparent_background(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/area/1760.png')
     txt = create_ss_img_label_list(r"C:\Users\cryst\Work\pipeline_design\Drone_io_pipeline-main\training", 'ss')
-    print(txt)
+    #rename_dir(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/DCIM/test_rename', 58)
