@@ -16,7 +16,7 @@ from utils import create_dirs, rename_dir
 class Preprocess:
 #name,inspection_no,facade_no, 
     
-    def __init__(self,name,inspection_no,frequency=[3],input_dir=None):
+    def __init__(self,name,inspection_no,buildingID, frequency=[1,2,3],input_dir=None):
         '''
         Initiating the class by creating all the necessary folders
 
@@ -26,13 +26,13 @@ class Preprocess:
         inspection_no : str
         facade_no : int, total number of facades
         input_dir : str, folder containing folders from SD card
-
         '''
-
-        self.root = 'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder'
+        
+        self.root = '/home/paul/Workspaces/python/Drone_io_pipeline-main/test_preprocess/'
         self.name = name
         self.inspect_no = 'inspect'+inspection_no
         self.frequency = frequency
+        self.buildingID = buildingID
         if input_dir is not None:
             self.input_dir = input_dir
         else:
@@ -85,10 +85,15 @@ class Preprocess:
         self.facade_sub_dirs = ['facade'+str(i) for i in range(1, self.facade_no+1)]
         self.facade_dir_process = os.path.join(self.result_dir, 'img_m210rtkv2_x7')
         self.facade_dir_raw = os.path.join(self.others_dir, 'raw')
-        facade_result = os.path.join(self.result_dir, 'all_results')
+        self.facade_result = os.path.join(self.result_dir, 'all_results')
         create_dirs(self.facade_sub_dirs, self.facade_dir_process)
         create_dirs(self.facade_sub_dirs, self.facade_dir_raw)
-        create_dirs(self.facade_sub_dirs, facade_result)
+        create_dirs(self.facade_sub_dirs, self.facade_result)
+        for facade_dir in self.facade_sub_dirs:
+            #create folder to store filtered images inside each facade folder
+            overlay_dir = os.path.join(self.facade_result, facade_dir, 'overlay')
+            if not os.path.exists(overlay_dir):
+                os.mkdir(overlay_dir)
         
     def combine_dirs(self):
         '''
@@ -178,11 +183,8 @@ class Preprocess:
             #create folder to store filtered images inside each facade folder
             facade_dir = os.path.join(self.facade_dir_raw, facade_dir)
             filtered_dir = os.path.join(self.facade_dir_raw, facade_dir, 'filtered')
-            overlay_dir = os.path.join(self.result_dir, 'all_results', facade_dir, 'overlay')
             if not os.path.exists(filtered_dir):
                 os.mkdir(filtered_dir)
-            if not os.path.exists(overlay_dir):
-                os.mkdir(overlay_dir)
             
             if int(self.frequency[idx]) > 1:
                 img_list = sorted([os.path.join(facade_dir, f) 
@@ -223,17 +225,12 @@ class Preprocess:
                   shutil.copystat(img, dest)
         #get inputs for ML models
         ml_inputs = {}
-        block_id = ''
-        for char in self.name[7:]:
-            if char != '_':
-                block_id = block_id+char
-            else:
-                break
-        ml_inputs['building'] = block_id
+        
+        ml_inputs['building'] = self.buildingID
         ml_inputs['flight'] = self.inspect_no[7:]
         ml_inputs['input_dir'] = self.facade_dir_process
         ml_inputs['output_dir'] = os.path.join(self.result_dir,'all_results')
-        #print(ml_inputs)
+
         return ml_inputs
 
                  

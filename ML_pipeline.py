@@ -6,7 +6,6 @@ Created on Fri Apr 23 16:26:07 2021
 """
 
 import os
-import re
 import cv2
 import sys
 import csv
@@ -23,7 +22,7 @@ class Inference():
         ml_inputs : dict, the output from preprocessing pipeline
         '''
         self.ml_inputs = ml_inputs
-        # self.get_parameters()
+        #self.get_parameters()
             
     def get_parameters(self):
         '''
@@ -119,6 +118,7 @@ class Inference():
         os.chdir('/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/')
         process = Popen(["/home/paul/Workspaces/python/sematic_segmentation/refinenet-pytorch/test/test_v2_ourdata_ds.sh %s %s" 
                           %(ds_txt,ds_out_dir)], stdout=PIPE, shell=True, universal_newlines=True)
+        
         while True:
             out = process.stdout.read(1)
             if out == '' and process.poll() != None:
@@ -132,7 +132,7 @@ class Inference():
 
     def severity(self, input_dir, crack=False, pixel_mm=None, critical_area=None):
         output = severity_process(input_dir, crack, pixel_mm=(0.46, 0.47), critical_area=17671)
-        print(output)
+        return output
         
     def update_csv(self, defect_output, output_dir):
         '''
@@ -150,33 +150,58 @@ class Inference():
         
         img_list = defect_output.keys()
 
-        update_list = [(os.path.split(img)[-1][:8],os.path.split(img)[-1][9:],
+        update_defect_list = [(os.path.split(img)[-1][:8],os.path.split(img)[-1][9:],
                         defect_output[img]) for img in img_list]
                
-        for name, defect,severity in update_list:
-            spalling = discoloration = rust = no_defect = False
+        for name, defect,severity in update_defect_list:
+#TODO: if defect, change no_defect to False
+            spalling = discoloration = rust = False
+            no_defect = True
             if 'E' in defect:
-                discoloration = no_defect = True
+                discoloration = True
+                no_defect = False
             if 'S' in defect:
-                spalling = no_defect = True
+                spalling = True
+                no_defect = False
             if 'M' in defect:
-                rust = no_defect = True
-            if no_defect is True:
+                rust = True
+                no_defect = False
+                
+            if no_defect is False:
                 update_item = next(item for item in csv_data if item["Name"]==name)
                 update_item['No Defect'] = no_defect
                 update_item['Spalling'] = spalling
                 update_item['Discoloration'] = discoloration
                 update_item['Metal Corrosion'] = rust
+        #as long as crack is detected, it's marked as require repair
+        #because all the cracks that can be detected are > 0.3mm (critical)
+                if update_item['Crack'].lower() == 'true':
+                    #print('crack true')
+                    update_item['crackSeverity'] = 'Require Repair'
                 for s in severity:
-                    if s[2] is True:
-                        update_item['Severity'] = 'severe'
+                    if s[0] == 38:
+                        if s[2] is True:
+                            update_item['efflorescenceSeverity'] = 'Require Repair'
+                        else:
+                            update_item['efflorescenceSeverity'] = 'Safe'
+                    elif s[0] == 75:
+                        if s[2] is True:
+                            update_item['rustSeverity'] = 'Require Repair'
+                        else:
+                            update_item['rustSeverity'] = 'Safe'
+                    elif s[0] == 113:
+                        if s[2] is True:
+                            update_item['spallingSeverity'] = 'Require Repair'
+                        else:
+                            update_item['spallingSeverity'] = 'Safe'
         
         header = ["Name", "Blistering", "Blistering Confidence Level", "Biological",
                   "Biological Confidence Level", "Crack", "Crack Confidence Level", 
                   "Delamination", "Delam Confidence Level", "Discoloration", 
                   "Discolour Confidence Level", "Peeling", "Peeling Confidence Level",
                   "Spalling", "Spalling Confidence Level", "Metal Corrosion",
-                  "Metal Confidence Level", "No Defect", 'Severity']
+                  "Metal Confidence Level", "No Defect", 'crackSeverity', 
+                  'efflorescenceSeverity', 'spallingSeverity', 'rustSeverity']
         
         with open(csv_path, 'w', newline='') as f:
             dict_writer = csv.DictWriter(f, header)
@@ -218,7 +243,7 @@ class Inference():
             added_img_defect = cv2.addWeighted(background,0.9,overlay_defect,0.8,0)
             
             cv2.imwrite(os.path.join(output_dir, name1), added_img_patch)
-            cv2.imwrite(os.path.join(output_dir, name2), added_img_defect)    
+            cv2.imwrite(os.path.join(output_dir, name2), added_img_defect)   
     
     
     def run(self):
@@ -230,13 +255,15 @@ class Inference():
             patch_dir = self.classification(input_dir, output_dir, i+1)
             defect_dir = self.defect_seg(input_dir, output_dir)
 
-            #severity based on area
-            self.severity(defect_dir, crack=False, pixel_mm=None, critical_area=None)
-
+            #get defect severity
+            defect_output = self.severity(defect_dir, crack=False, pixel_mm=None, critical_area=None)
             patch_name = "BuildingId_{}_FacadeId_{}_FlightId_{}".format(self.building_ID, i+1, self.flight_ID)
+            #overlay masked image and model outputs
             patch_dir = os.path.join(patch_dir, patch_name)
             self.overlay(masked_dir, patch_dir, defect_dir, output_dir+'/overlay/')
+            self.update_csv(defect_output, output_dir)
             break
+
         return masked_dir, patch_dir, defect_dir
 
         
@@ -247,13 +274,9 @@ if __name__ == '__main__':
     ml_inputs['building'] = '288'
     ml_inputs['flight'] = '1'
     
-    defect_output = {'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/Inference_results/defect_seg\\DJI_1044_M.png': [(75, 95831, True)], 
-     'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/Inference_results/defect_seg\\DJI_1048_.png': [],
-     'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/Inference_results/defect_seg\\DJI_1053_E_R.png': [(38, 33318, True), (113, 16663, False)]}
-    
     inference = Inference(ml_inputs)
     # inference = Inference(ml_inputs)
-    # inference.severity('/home/paul/Workspaces/python/Drone_io_pipeline-main/test_preprocess/112233_288_G_bishan3/inspect1/results/all_results/facade1/defect_seg')
-    #inference.run()
+    defect_output = inference.severity(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/Inference_results/defect_seg')
+    print(defect_output)
     inference.update_csv(defect_output, r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/Inference_results')
     
