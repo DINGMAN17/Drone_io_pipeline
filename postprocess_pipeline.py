@@ -13,8 +13,8 @@ from requests import HTTPError, Timeout
 class UploadProcess:
     
     def __init__(self, upload_inputs):
-        self.url = "https://www.wingspect.net/api/images/"
-        self._token = '4557b2472a8b6713fa831e070e7030b97ad142d9'
+        self.url = "https://abc"
+        self._token = 'abc'
         self.get_parameters(upload_inputs)
         
     def get_parameters(self, inputs):
@@ -66,7 +66,7 @@ class UploadProcess:
         filepath=[]
         
         try:
-            url_get = "https://www.wingspect.net/api/images/?building=" + \
+            url_get = "https://abc=" + \
                 self.buildingID  + "&facade=" + str(facadeID) + '&original=true'
             
             response_get = requests.get(url_get, headers=headers,
@@ -190,11 +190,11 @@ if __name__ == '__main__':
     inputs = {}
     inputs['building'] = 5
     inputs['flight'] = 1
-    inputs['raw_img_dir'] = '/home/paul/Workspaces/python/Drone_io_pipeline-main/test_preprocess/123456_230_bishan/inspect1/results/img_m210rtkv2_x7'
-    inputs['result_img_dir'] = '/home/paul/Workspaces/python/Drone_io_pipeline-main/test_preprocess/181818_12_test/inspect1/results/all_results'
+    inputs['raw_img_dir'] = ''
+    inputs['result_img_dir'] = ''
     upload = UploadProcess(inputs)
     #upload.run_post_raw(True)
-    #upload.run_post_overlay('/home/paul/Workspaces/python/Drone_io_pipeline-main/test_preprocess/123456_230_bishan/inspect1/results/all_results/facade1')
+    #upload.run_post_overlay('')
     
     upload.run_patch(True)
     
