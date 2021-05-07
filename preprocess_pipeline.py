@@ -225,13 +225,15 @@ class Preprocess:
                   shutil.copystat(img, dest)
         #get inputs for ML models
         ml_inputs = {}
+        upload_inputs = {}
         
-        ml_inputs['building'] = self.buildingID
-        ml_inputs['flight'] = self.inspect_no[7:]
-        ml_inputs['input_dir'] = self.facade_dir_process
-        ml_inputs['output_dir'] = os.path.join(self.result_dir,'all_results')
+        ml_inputs['building'] = upload_inputs['building'] = self.buildingID
+        ml_inputs['flight'] = upload_inputs['flight'] = self.inspect_no[7:]
+        ml_inputs['input_dir'] = upload_inputs['raw_img_dir'] = self.facade_dir_process
+        ml_inputs['output_dir'] = upload_inputs['result_img_dir'] = os.path.join(self.result_dir,'all_results')
+        upload_inputs['facade_no'] = self.facade_no
 
-        return ml_inputs
+        return ml_inputs, upload_inputs
 
                  
     def run(self):        
@@ -241,14 +243,14 @@ class Preprocess:
         self.allocate_imgs(time_data, facade_list)
         self.rename_facade_dirs()
         self.filter_overlap()
-        ml_inputs = self.process_ready()
-        return ml_inputs
+        ml_inputs, upload_inputs = self.process_ready()
+        return ml_inputs, upload_inputs
                  
                 
 if __name__ == '__main__':
     preprocess = Preprocess('102030_288G_bishanroad3', '1')
-    ml_inputs = preprocess.run()
-    print(ml_inputs)
+    ml_inputs, upload_inputs = preprocess.run()
+    print(ml_inputs, upload_inputs)
     
 
     

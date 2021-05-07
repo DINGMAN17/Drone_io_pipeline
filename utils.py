@@ -5,7 +5,6 @@ Created on Sat Jan  9 16:21:46 2021
 @author: cryst
 """
 import os
-#import cv2
 
 def create_image_list(folder_path=None, model=None, file_type='.JPG'):
     '''
@@ -115,22 +114,7 @@ def rename_dir(folder, start_no=1):
             os.rename(os.path.join(folder, img[0]+img[1]), img_path)
             
     return len(img_list)
-
-# def transparent_background(file):
-#     '''
-#     remove the black background of an image (for defect segmentation outputs)
-
-#     '''
-#     src = cv2.imread(file, 1)
-#     tmp = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
-#     _,alpha = cv2.threshold(tmp,0,255,cv2.THRESH_BINARY)
-#     b, g, r = cv2.split(src)
-#     rgba = [b,g,r, alpha]
-#     dst = cv2.merge(rgba,4)
-    
-#     cv2.imwrite(file, dst)
     
 if __name__ == '__main__':
-    #transparent_background(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/area/1760.png')
-    txt = create_ss_img_label_list(r"C:\Users\cryst\Work\pipeline_design\Drone_io_pipeline-main\training", 'ss')
-    #rename_dir(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/DCIM/test_rename', 58)
+    #txt = create_ss_img_label_list(r"C:\Users\cryst\Work\pipeline_design\Drone_io_pipeline-main\training", 'ss')
+    rename_dir(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/DCIM/test_rename', 58)

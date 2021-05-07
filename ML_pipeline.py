@@ -22,7 +22,7 @@ class Inference():
         ml_inputs : dict, the output from preprocessing pipeline
         '''
         self.ml_inputs = ml_inputs
-        #self.get_parameters()
+        self.get_parameters()
             
     def get_parameters(self):
         '''
@@ -155,27 +155,27 @@ class Inference():
                
         for name, defect,severity in update_defect_list:
 #TODO: if defect, change no_defect to False
-            spalling = discoloration = rust = False
-            no_defect = True
+            spalling = discoloration = rust = 'False'
+            no_defect = 'True'
             if 'E' in defect:
-                discoloration = True
-                no_defect = False
+                discoloration = 'True'
+                no_defect = 'False'
             if 'S' in defect:
-                spalling = True
-                no_defect = False
+                spalling = 'True'
+                no_defect = 'False'
             if 'M' in defect:
-                rust = True
-                no_defect = False
+                rust = 'True'
+                no_defect = 'False'
                 
-            if no_defect is False:
-                update_item = next(item for item in csv_data if item["Name"]==name)
-                update_item['No Defect'] = no_defect
-                update_item['Spalling'] = spalling
-                update_item['Discoloration'] = discoloration
-                update_item['Metal Corrosion'] = rust
+            if no_defect == 'False':
+                update_item = next(item for item in csv_data if item["name"]==name)
+                update_item['nonDefect'] = no_defect
+                update_item['spalling'] = spalling
+                update_item['discolouration'] = discoloration
+                update_item['metalCorrosion'] = rust
         #as long as crack is detected, it's marked as require repair
         #because all the cracks that can be detected are > 0.3mm (critical)
-                if update_item['Crack'].lower() == 'true':
+                if update_item['crack'].lower() == 'true':
                     #print('crack true')
                     update_item['crackSeverity'] = 'Require Repair'
                 for s in severity:
@@ -194,15 +194,16 @@ class Inference():
                             update_item['spallingSeverity'] = 'Require Repair'
                         else:
                             update_item['spallingSeverity'] = 'Safe'
+
+        csv_data_dict = [dict(item) for item in csv_data]
         
-        header = ["Name", "Blistering", "Blistering Confidence Level", "Biological",
-                  "Biological Confidence Level", "Crack", "Crack Confidence Level", 
-                  "Delamination", "Delam Confidence Level", "Discoloration", 
-                  "Discolour Confidence Level", "Peeling", "Peeling Confidence Level",
-                  "Spalling", "Spalling Confidence Level", "Metal Corrosion",
-                  "Metal Confidence Level", "No Defect", 'crackSeverity', 
-                  'efflorescenceSeverity', 'spallingSeverity', 'rustSeverity']
-        
+        header = ["name", "blistering", "blisteringLevel", "biological",
+                  "biologicalLevel", "crack", "crackLevel", "delamination", 
+                  "delamLevel", "discolouration", "efflorescenceLevel", "peeling", 
+                  "peelingLevel", "spalling", "spallingLevel","metalCorrosion",
+                  "rustLevel", "nonDefect", 'crackSeverity', 'efflorescenceSeverity',
+                  'spallingSeverity', 'rustSeverity']
+
         with open(csv_path, 'w', newline='') as f:
             dict_writer = csv.DictWriter(f, header)
             dict_writer.writeheader()
@@ -211,8 +212,10 @@ class Inference():
         #move csv to parent directory
         dst = os.path.join(output_dir, os.path.split(csv_path)[-1])
         shutil.move(csv_path, dst)
+
+        return csv_data_dict
             
-            
+#TODO: reduce overlay file size!!            
     def overlay(self, mask_dir, patch_dir, defect_dir, output_dir):
         '''
         overlay the mask image and defet patch image
@@ -261,10 +264,9 @@ class Inference():
             #overlay masked image and model outputs
             patch_dir = os.path.join(patch_dir, patch_name)
             self.overlay(masked_dir, patch_dir, defect_dir, output_dir+'/overlay/')
-            self.update_csv(defect_output, output_dir)
+            csv_data = self.update_csv(defect_output, output_dir)
             break
-
-        return masked_dir, patch_dir, defect_dir
+        return csv_data
 
         
 if __name__ == '__main__':
@@ -275,8 +277,11 @@ if __name__ == '__main__':
     ml_inputs['flight'] = '1'
     
     inference = Inference(ml_inputs)
+    # inference.overlay(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/database_integration/test_uploading/119287_288_bishan/inspect1/results/all_results/facade1/semantic/MASKED',
+    #                   r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/database_integration/test_uploading/119287_288_bishan/inspect1/results/all_results/facade1/classification/BuildingId_288_FacadeId_1_FlightId_1',
+    #                   r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/database_integration/test_uploading/119287_288_bishan/inspect1/results/all_results/facade1/defect_seg',
+    #                   r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/database_integration/test_uploading/119287_288_bishan/inspect1/results/all_results/facade1/overlay')
     # inference = Inference(ml_inputs)
-    defect_output = inference.severity(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/Inference_results/defect_seg')
-    print(defect_output)
-    inference.update_csv(defect_output, r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/Inference_results')
-    
+    #defect_output = inference.severity(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/Inference_results/defect_seg')
+    #print(defect_output)
+    #inference.update_csv(defect_output, r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/Inference_results')

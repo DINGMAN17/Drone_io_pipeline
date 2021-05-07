@@ -37,7 +37,7 @@ def calculate_area(input_file, pixel_mm =(0.46, 0.47), critical_area=17671):
     #check if the defect is critical, default critical - 150mm diameter
     output = [(area[0],area[1],area[1]>critical_area) for area in all_area]
     #output: [color, area, condition]
-    return output
+    return output, new_name
 
 
 def get_crack_width(input_file, pixel_mm=0.31, draw=False):
@@ -83,8 +83,8 @@ def severity_process(input_dir, crack=False, pixel_mm=(0.46, 0.47), critical_are
     else:
         for img in img_list:
             img = os.path.join(input_dir,img)
-            output = calculate_area(img, pixel_mm, critical_area)
-            result[img] = output
+            output, new_name = calculate_area(img, pixel_mm, critical_area)
+            result[new_name] = output
     
     # file = os.path.join(input_dir, 'severity.json')
     # with open(file, 'w') as f: 
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     #width, critical = get_crack_width(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/defect_severity/DJI_0774_1mm_dilate.png',
     #                        draw=False)
     #print(width, critical)
-    result = severity_process(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/area')
+    result = severity_process(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/Inference_results/defect_seg')
     print(result)
 
 
