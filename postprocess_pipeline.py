@@ -146,9 +146,7 @@ class UploadProcess:
         facade_sub_dirs = [os.path.join(self.result_img_dir, 'facade'+str(i)) for i in range(1, self.facade_no+1)]
 
         for img_dir in facade_sub_dirs:
-            csv_path = [os.path.join(img_dir,f) for f in os.listdir(img_dir) if
-                        f.endswith('.csv')][0]
-            csv_data = list(csv.DictReader(open(csv_path)))
+            
             facadeID = img_dir[-1]
             mask_dir = os.path.join(img_dir, 'semantic', 'MASKED')
             mask_img_list = [os.path.join(mask_dir,f) for f in os.listdir(mask_dir)]
