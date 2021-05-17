@@ -94,7 +94,7 @@ def create_dirs(dir_list, parent_dir):
             if not os.path.exists(folder):
                 os.mkdir(folder)
 
-def rename_dir(folder, start_no=1):
+def rename_dir(folder, start_no=1, drone=True):
     '''
     rename the images in each facade folder, starting from DJI_0001.JPG
 
@@ -107,7 +107,11 @@ def rename_dir(folder, start_no=1):
     
     for img in sorted(img_list, reverse=True):
         if img[1].lower() in ['.png', '.jpg', '.jpeg', '.JPG']:
-            img_path = os.path.join(folder, 
+            if drone:
+                img_path = os.path.join(folder, 
+								'DJI_'+str(rename_image_num).zfill(4)+img[1])
+            else:
+                img_path = os.path.join(folder, 
 								'HHL_'+str(rename_image_num).zfill(4)+img[1])
 
             rename_image_num -= 1

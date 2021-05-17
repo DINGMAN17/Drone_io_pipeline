@@ -18,7 +18,8 @@ from utils import create_dirs, rename_dir
 class Preprocess:
 #name,inspection_no,facade_no, 
 	
-	def __init__(self,name,inspection_no,buildingID, frequency=[1,2,3],input_dir=None):
+	def __init__(self,name,inspection_no,buildingID,frequency=[1,2,3],
+				  handheld=True, thermal=False):
 		'''
 		Initiating the class by creating all the necessary folders
 
@@ -27,25 +28,29 @@ class Preprocess:
 		name : building folder name
 		inspection_no : str
 		facade_no : int, total number of facades
-		input_dir : str, folder containing folders from SD card
+		handheld : list of 2, 1st item: drone images path; 2nd item: handheld images path
 		'''
 		
-		self.root = '/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/'
+		self.root = r'/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset'
 		self.name = name
 		self.inspect_no = 'inspect'+inspection_no
 		self.frequency = frequency
 		self.buildingID = buildingID
-		if input_dir is not None:
-			self.input_dir = input_dir
-		else:
-			self.input_dir = os.path.join(self.root, 'Hdb')        
-		
-	def extract_timesheet(self, timesheet=None):
+		self.handheld = handheld
+		self.thermal = thermal
+		self.input_drone = os.path.join(self.root, 'DCIM')  
+		if self.handheld:
+			self.input_handheld = os.path.join(self.root, 'Handheld')			
+				
+	def extract_timesheet(self, drone=True, timesheet=None):
 		#get the facade time_in, time_out from timesheet csv
 		time_data = []
 		facade_list = []
 		if timesheet is None:
-			timesheet = os.path.join(self.root, 'timesheet_handheld.csv')
+			if drone:
+				timesheet = os.path.join(self.root, 'timesheet_drone.csv')
+			else:
+				timesheet = os.path.join(self.root, 'timesheet_handheld.csv')
 		with open (timesheet,'r',newline='') as f:   
 			lines = csv.reader(f)
 			header = next(lines)
@@ -57,7 +62,10 @@ class Preprocess:
 				facade_list.append(facade_no)
 				time_data.append(facade_time)
 		f.close()
-		self.facade_no = len(set(facade_list))
+		if drone:
+			self.facade_list_drone = list(set(facade_list))
+		else:
+			self.facade_list_handheld = list(set(facade_list))
 		#print(time_data)
 		return time_data, facade_list
 
@@ -81,18 +89,32 @@ class Preprocess:
 		others_sub_dirs = ['raw', 'raw_SD'] #may add more sub folders later on
 		create_dirs(others_sub_dirs, self.others_dir)
 				
-		results_sub_dirs = ['all_results', 'img_m210rtkv2_x7']
+		results_sub_dirs = ['all_results', 'img_m210rtkv2_x7', 'all_results_handheld_rgb',
+						  'img_handheld_rgb']
 		self.result_dir = os.path.join(inspect_dir, 'results')
 		create_dirs(results_sub_dirs, self.result_dir)
 		
-		self.facade_sub_dirs = ['facade'+str(i) for i in range(1, self.facade_no+1)]
-		self.facade_dir_process = os.path.join(self.result_dir, 'img_m210rtkv2_x7')
+		self.facade_drone_dirs = ['facade'+str(i) for i in self.facade_list_drone]
+		self.facade_dir_process = os.path.join(self.result_dir, 'img_m210rtkv2_x7')		
 		self.facade_dir_raw = os.path.join(self.others_dir, 'raw')
 		self.facade_result = os.path.join(self.result_dir, 'all_results')
-		create_dirs(self.facade_sub_dirs, self.facade_dir_process)
-		create_dirs(self.facade_sub_dirs, self.facade_dir_raw)
-		create_dirs(self.facade_sub_dirs, self.facade_result)
-		for facade_dir in self.facade_sub_dirs:
+		if self.handheld:
+			self.facade_hhl_dirs = ['facade'+str(i) for i in self.facade_list_handheld]
+			self.facade_dir_handheld = os.path.join(self.result_dir, 'img_handheld_rgb')
+			self.facade_result_handheld = os.path.join(self.result_dir, 'all_results_handheld_rgb')
+			for folder in [self.facade_dir_handheld, self.facade_result_handheld]:    
+				create_dirs(self.facade_hhl_dirs, folder)
+				
+			for facade_dir in self.facade_hhl_dirs:
+			#create folder to store filtered images inside each facade folder
+				overlay_dir = os.path.join(self.facade_result_handheld, facade_dir, 'overlay')
+				if not os.path.exists(overlay_dir):
+					os.mkdir(overlay_dir)
+				
+		for folder in [self.facade_dir_process,self.facade_dir_raw,self.facade_result]:
+			create_dirs(self.facade_drone_dirs, folder)
+		
+		for facade_dir in self.facade_drone_dirs:
 			#create folder to store filtered images inside each facade folder
 			overlay_dir = os.path.join(self.facade_result, facade_dir, 'overlay')
 			if not os.path.exists(overlay_dir):
@@ -101,22 +123,22 @@ class Preprocess:
 	def combine_dirs(self):
 		'''
 		combine multiple folders from SD card, rename the image files starting 
-		from DJI_0001
+		from DJI_0001, only for drone images
 
 		'''
 		total_no = 1
-		subdirs = [x[0] for x in os.walk(self.input_dir)][1:]
+		subdirs = [x[0] for x in os.walk(self.input_drone)][1:]
 
 		for img_dir in sorted(subdirs):            
 
 			img_list = sorted([os.path.join(img_dir,f) for f in os.listdir(img_dir)
-					if os.path.isfile(os.path.join(img_dir, f))])
+							 if os.path.isfile(os.path.join(img_dir, f))])
 			num = len(img_list)
 			
 			start_no = total_no
 			for img in img_list:
 
-				name = 'HHL_'+str(start_no).zfill(4)+os.path.splitext(img)[-1]				
+				name = 'DJI_'+str(start_no).zfill(4)+os.path.splitext(img)[-1]				
 				dest = os.path.join(self.others_dir, 'raw_SD', name)
 				start_no += 1
 				shutil.copy(img, dest)
@@ -128,12 +150,15 @@ class Preprocess:
 		return Image.open(img).getexif()[36867]
 
 #TODO: decide where to put the timesheet csv & input folder
-	def allocate_imgs(self, time_data, facade_list, folder=None):
+	def allocate_imgs(self, time_data, facade_list, folder=None, drone=True):
 		'''
 		allocate images to the respective facade folder, based on timesheet
 		'''
 		if folder is None:
-			folder = os.path.join(self.others_dir, 'raw_SD')
+			if drone:
+				folder = os.path.join(self.others_dir, 'raw_SD')
+			else:
+				folder = self.input_handheld
 		
 		#extract modified data of the images
 		img_list = [os.path.join(folder,f) for f in os.listdir(folder)
@@ -145,12 +170,9 @@ class Preprocess:
 		for img in img_list:
 			time = Preprocess.extract_time(img)
 			time_modify_list.append(time.split()[1])
-
-		#print(time_modify_list)
 		
 		time_modify_list = [int(t[:2])*3600+int(t[3:5])*60+int(t[6:8])
 							for t in time_modify_list]
-		
 		#print(time_modify_list)
 		
 		#determine which facade the images belong
@@ -164,28 +186,33 @@ class Preprocess:
 					idx_list.append(('facade'+str(facade_no),j))
 		
 		#copy imgs to the corresponding facade no.
-		
-		#print(idx_list)
-		
+		#print(idx_list)		
 		for i in tqdm(range(len(idx_list))):
 			name = os.path.split(img_list[i])[-1]
-			#dest = os.path.join(self.facade_dir_raw, idx_list[i][0], name)
-			dest = os.path.join('/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/handheld/inspect1/img_m210rtkv2_x7_others/raw', idx_list[i][0], name)
-			
+			if drone:
+				dest = os.path.join(self.facade_dir_raw, idx_list[i][0], name)	
+				#dest = os.path.join('/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/288G_1/inspect1/img_m210rtkv2_x7_others/raw', \
+				#		 idx_list[i][0], name)	
+			else:
+				dest = os.path.join(self.facade_dir_handheld, idx_list[i][0], name)
 			shutil.copy(img_list[i], dest)
 			shutil.copystat(img_list[i], dest)
 
 			
-	def rename_facade_dirs(self):
+	def rename_facade_dirs(self, drone=True):
 		'''
 		rename images for all the facade folders
 		'''
-		for facade in self.facade_sub_dirs:
-			facade_dir = os.path.join(self.facade_dir_raw, facade)
-			rename_dir(facade_dir)
+		if drone:
+			for facade in self.facade_drone_dirs:
+				facade_dir = os.path.join(self.facade_dir_raw, facade)
+				rename_dir(facade_dir)
+		else:
+			for facade in self.facade_hhl_dirs:
+				facade_dir = os.path.join(self.facade_dir_handheld, facade)
+				rename_dir(facade_dir, drone=False)
 			
 	def filter_overlap(self):
-#TODO: set the frequency based on images/minute,
 		'''
 		filter out overlapped images based on the frequency defined
 		Parameters
@@ -196,8 +223,8 @@ class Preprocess:
 		'''
 		idx = 0
 		if len(self.frequency)==1:
-			self.frequency = self.frequency * self.facade_no
-		for facade_dir in self.facade_sub_dirs:
+			self.frequency = self.frequency * len(self.facade_drone_dirs)
+		for facade_dir in self.facade_drone_dirs:
 			#create folder to store filtered images inside each facade folder
 			facade_dir = os.path.join(self.facade_dir_raw, facade_dir)
 			filtered_dir = os.path.join(self.facade_dir_raw, facade_dir, 'filtered')
@@ -220,13 +247,12 @@ class Preprocess:
 							#print(dest)
 							shutil.move(img, dest)
 			idx += 1
-
 	
 			
 	def extract_distance(self):
 		pass
 							
-	def process_ready(self):
+	def process_ready(self, drone=True):
 		'''
 		get ready to feed images to inference pipeline
 		- copy image to the folder that is ready for processing
@@ -249,37 +275,43 @@ class Preprocess:
 		
 		ml_inputs['building'] = upload_inputs['building'] = self.buildingID
 		ml_inputs['flight'] = upload_inputs['flight'] = self.inspect_no[7:]
-		ml_inputs['input_dir'] = upload_inputs['raw_img_dir'] = self.facade_dir_process
-		ml_inputs['output_dir'] = upload_inputs['result_img_dir'] = os.path.join(self.result_dir,'all_results')
-		upload_inputs['facade_no'] = self.facade_no
+		ml_inputs['input_dir_drone'] = upload_inputs['raw_drone_dir'] = self.facade_dir_process
+		ml_inputs['output_drone_dir'] = upload_inputs['result_drone_dir'] = os.path.join(self.result_dir,'all_results')
+		upload_inputs['facade_no_drone'] = self.facade_drone_dirs
+		upload_inputs['facade_no_hhl'] = self.facade_hhl_dirs
 
 		return ml_inputs, upload_inputs
 
 				 
-	def run(self):        
-		time_data, facade_list = self.extract_timesheet()
+	def run(self):      
+		
+		time_data_drone, facade_list_drone = self.extract_timesheet(True)
+		if self.handheld:
+			time_data_handheld, facade_list_handheld = self.extract_timesheet(False)
 		self.create_standard_dirs()
-		#self.combine_dirs()
-		#self.allocate_imgs(time_data, facade_list)
-		#self.rename_facade_dirs()
-		#self.filter_overlap()
+		self.combine_dirs()
+		self.allocate_imgs(time_data_drone, facade_list_drone)
+		self.rename_facade_dirs()
+		if self.handheld:
+			self.allocate_imgs(time_data_handheld, facade_list_handheld, drone=False)
+			self.rename_facade_dirs(False)		
+		self.filter_overlap()
 		#ml_inputs, upload_inputs = self.process_ready()
 		#return ml_inputs, upload_inputs
 				 
 				
 if __name__ == '__main__':
-	#preprocess = Preprocess('handheld', '1', '5', [1])
+	preprocess = Preprocess('288G_1', '1', '5', [2], handheld=True)
 	#timesheet = '/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/timesheet_handheld.csv'
-	#preprocess.run()
-	#time_data, facade_list = preprocess.extract_timesheet(timesheet)
-	#print(preprocess.facade_no)
+	preprocess.run()
+	#time_data, facade_list = preprocess.extract_timesheet(True)
 	#print(time_data)
 	#preprocess.allocate_imgs(time_data, facade_list, folder='/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/handheld/inspect1/img_m210rtkv2_x7_others/raw_SD')
 	#preprocess.rename_facade_dirs()
 
-	folder = '/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/handheld/inspect1/img_m210rtkv2_x7_others/janine/facade'
-	for i in [1, 3,4,8,9,10,11,13,14]:
-		rename_dir(folder+str(i))
+	#folder = '/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/handheld/inspect1/img_m210rtkv2_x7_others/janine/facade'
+	#for i in [1, 3,4,8,9,10,11,13,14]:
+#		rename_dir(folder+str(i))
 
 	#print(ml_inputs, upload_inputs)
 	
