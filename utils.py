@@ -106,9 +106,9 @@ def rename_dir(folder, start_no=1):
     rename_image_num = start_no + num_img
     
     for img in sorted(img_list, reverse=True):
-        if img[1].lower() in ['.png', '.jpg', '.jpeg']:
+        if img[1].lower() in ['.png', '.jpg', '.jpeg', '.JPG']:
             img_path = os.path.join(folder, 
-								'DJI_'+str(rename_image_num).zfill(4)+img[1])
+								'HHL_'+str(rename_image_num).zfill(4)+img[1])
 
             rename_image_num -= 1
             os.rename(os.path.join(folder, img[0]+img[1]), img_path)
