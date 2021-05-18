@@ -259,26 +259,31 @@ class Preprocess:
 		- prepare inputs for ML models
 		'''
 		#copy image to the folder
-		for facade_dir in self.facade_sub_dirs:
-			  facade_raw_dir = os.path.join(self.facade_dir_raw, facade_dir)
-			  facade_new_dir = os.path.join(self.facade_dir_process, facade_dir)
-			 
-			  img_list = [os.path.join(facade_raw_dir, f) for f in os.listdir(facade_raw_dir) 
-						  if os.path.isfile(os.path.join(facade_raw_dir, f))]
-			  for img in img_list:
-				  dest = os.path.join(facade_new_dir, os.path.split(img)[-1])
-				  shutil.copy(img, dest)
-				  shutil.copystat(img, dest)
+		if drone:
+			for facade_dir in self.facade_drone_dirs:
+				  facade_raw_dir = os.path.join(self.facade_dir_raw, facade_dir)
+				  facade_new_dir = os.path.join(self.facade_dir_process, facade_dir)
+				 
+				  img_list = [os.path.join(facade_raw_dir, f) for f in os.listdir(facade_raw_dir) 
+							  if os.path.isfile(os.path.join(facade_raw_dir, f))]
+				  for img in img_list:
+					  dest = os.path.join(facade_new_dir, os.path.split(img)[-1])
+					  shutil.copy(img, dest)
+					  shutil.copystat(img, dest)
 		#get inputs for ML models
 		ml_inputs = {}
 		upload_inputs = {}
 		
 		ml_inputs['building'] = upload_inputs['building'] = self.buildingID
 		ml_inputs['flight'] = upload_inputs['flight'] = self.inspect_no[7:]
-		ml_inputs['input_dir_drone'] = upload_inputs['raw_drone_dir'] = self.facade_dir_process
-		ml_inputs['output_drone_dir'] = upload_inputs['result_drone_dir'] = os.path.join(self.result_dir,'all_results')
-		upload_inputs['facade_no_drone'] = self.facade_drone_dirs
-		upload_inputs['facade_no_hhl'] = self.facade_hhl_dirs
+		if drone:
+			ml_inputs['input_dir'] = upload_inputs['raw_dir'] = self.facade_dir_process
+			ml_inputs['output_dir'] = upload_inputs['result_dir'] = os.path.join(self.result_dir,'all_results')
+			upload_inputs['facade_no'] = self.facade_drone_dirs
+		else:
+			ml_inputs['input_dir'] = upload_inputs['raw_dir'] = self.facade_dir_handheld
+			ml_inputs['output_dir'] = upload_inputs['result_dir'] = self.facade_result_handheld
+			upload_inputs['facade_no'] = self.facade_hhl_dirs
 
 		return ml_inputs, upload_inputs
 
@@ -292,28 +297,26 @@ class Preprocess:
 		self.combine_dirs()
 		self.allocate_imgs(time_data_drone, facade_list_drone)
 		self.rename_facade_dirs()
+		self.filter_overlap()
+		ml_inputs_drone, upload_inputs_drone = self.process_ready()
 		if self.handheld:
 			self.allocate_imgs(time_data_handheld, facade_list_handheld, drone=False)
-			self.rename_facade_dirs(False)		
-		self.filter_overlap()
-		#ml_inputs, upload_inputs = self.process_ready()
-		#return ml_inputs, upload_inputs
+			self.rename_facade_dirs(False)
+			ml_inputs_hhl, upload_inputs_hhl = self.process_ready(False)
+
+			return ml_inputs_drone, ml_inputs_hhl, upload_inputs_drone, upload_inputs_hhl
+		
+		return ml_inputs_drone, upload_inputs_drone
 				 
 				
 if __name__ == '__main__':
 	preprocess = Preprocess('288G_1', '1', '5', [2], handheld=True)
-	#timesheet = '/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/timesheet_handheld.csv'
-	preprocess.run()
-	#time_data, facade_list = preprocess.extract_timesheet(True)
-	#print(time_data)
-	#preprocess.allocate_imgs(time_data, facade_list, folder='/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/handheld/inspect1/img_m210rtkv2_x7_others/raw_SD')
-	#preprocess.rename_facade_dirs()
-
-	#folder = '/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/handheld/inspect1/img_m210rtkv2_x7_others/janine/facade'
-	#for i in [1, 3,4,8,9,10,11,13,14]:
-#		rename_dir(folder+str(i))
-
-	#print(ml_inputs, upload_inputs)
+	ml_inputs_drone, ml_inputs_hhl, upload_inputs_drone, upload_inputs_hhl = preprocess.run()
+	print(ml_inputs_drone)
+	print(ml_inputs_hhl)
+	print(upload_inputs_drone)
+	print(upload_inputs_hhl)
+	
 	
 
 	
