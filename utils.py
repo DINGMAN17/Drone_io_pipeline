@@ -6,7 +6,7 @@ Created on Sat Jan  9 16:21:46 2021
 """
 import os
 
-def create_image_list(folder_path=None, model=None, file_type='.JPG'):
+def create_image_list(folder_path=None, model=None):
     '''
     create a txt file which contains the absolute path of all test images.
     the txt file will be fed into semantic/defect segmentation model.
@@ -23,11 +23,11 @@ def create_image_list(folder_path=None, model=None, file_type='.JPG'):
     '''   
     #path = "C:/Users/cryst/Study/Thesis/images" #for testing
     path = folder_path 
-    file_type = file_type
+    #file_type = file_type
     filename = model + '_test_img_list.txt'            
         
     with open(filename, 'w') as file:
-        file.writelines([path + '/' + f +'\n' for f in os.listdir(path) if f.endswith(file_type)])
+        file.writelines([path + '/' + f +'\n' for f in os.listdir(path) if f.endswith(('.jpg', '.JPG'))])
 
     return os.path.abspath(filename)
 

@@ -168,10 +168,10 @@ if __name__ == '__main__':
     #input_dir = '/home/paul/Workspaces/python/Drone_io_pipeline-main/test_thermal_pipeline/'
     #input_dir = '/home/paul/Workspaces/python/Drone_io_pipeline-main/Thermal_defects'
     #output_dir = '/home/paul/Workspaces/python/Drone_io_pipeline-main/Thermal_defects_results'
-    thermal_inputs = {'input_dir': '/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/test_thermal_preprocess/bishan/inspect1/results',
-      'output_dir': '/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/test_thermal_preprocess/bishan/inspect1/results/all_results_drone_ir', 
+    thermal_inputs = {'input_dir': '/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/test_preprocess/test_3/bishan_xt2/inspect1/results',
+      'output_dir': '/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/test_preprocess/test_3/bishan_xt2/inspect1/results/all_results_drone_ir', 
       'facade_no': ['facade5', 'facade4', 'facade2', 'facade3', 'facade6']}
-    distance = '6m'
+    distance = '7m'
     input_dir = thermal_inputs['input_dir']
     output_dir = thermal_inputs['output_dir']
     facade_list = thermal_inputs['facade_no']

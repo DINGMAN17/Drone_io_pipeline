@@ -6,10 +6,13 @@ Created on Fri Apr 23 16:26:07 2021
 """
 
 import os
+import re
 import cv2
 import sys
 import csv
 import shutil
+import numpy as np
+from tqdm import tqdm
 from subprocess import PIPE, Popen
 from defect_severity import severity_process
 from utils import create_image_list, create_folder_list
@@ -39,6 +42,7 @@ class Inference():
         self.output_dir = self.ml_inputs['output_dir']
         self.building_ID = self.ml_inputs['building']
         self.flight_ID = self.ml_inputs['flight']
+        self.facade_list = self.ml_inputs['facade_list']
         
         if not os.path.exists(self.output_dir):
             raise Exception('Invalid output directory')
@@ -48,12 +52,12 @@ class Inference():
             raise Exception('building/flight ID not specified')
             
         self.facade_input_dirs = sorted([x[0] for x in os.walk(self.input_dir)][1:])
-        self.facade_no = len(self.facade_input_dirs)
+        #print(len(self.facade_input_dirs))
 
             
     def semantic_seg(self, input_dir, output_dir):
         #create a folder named 'semantic' in the output directory to store results
-
+        print(output_dir)
         ss_out_dir = output_dir + '/semantic/'
         if not os.path.exists(ss_out_dir):
             os.mkdir(ss_out_dir)
@@ -77,7 +81,7 @@ class Inference():
 
         #out, err = process.communicate()
     
-    def classification(self, input_dir, output_dir, facadeID):
+    def classification(self, input_dir, output_dir, facadeID=1):
         '''
         Run inference on defect classification model. 
         - purpose: identify crack, spalling (Delamination)
@@ -141,12 +145,12 @@ class Inference():
         '''
         #read the previous csv file into a list of dicts
         
+        
         dc_dir = os.path.join(output_dir,'classification')
         csv_path = [os.path.join(dc_dir,f) for f in os.listdir(dc_dir) if
                     f.endswith('.csv')][0]
 
         csv_data = list(csv.DictReader(open(csv_path)))
-
         
         img_list = defect_output.keys()
 
@@ -163,6 +167,9 @@ class Inference():
             if 'S' in defect:
                 spalling = 'True'
                 no_defect = 'False'
+            else:
+                spalling = 'False'
+
             if 'M' in defect:
                 rust = 'True'
                 no_defect = 'False'
@@ -216,14 +223,10 @@ class Inference():
         return csv_data_dict
             
 #TODO: reduce overlay file size!!            
-    def overlay(self, mask_dir, patch_dir, defect_dir, output_dir):
+    def overlay(self, mask_dir, patch_dir, defect_dir, output_dir, merge=False):
         '''
         overlay the mask image and defet patch image
         '''
-
-        mask_list = sorted([os.path.join(mask_dir, f) 
-                           for f in os.listdir(mask_dir) if
-                           os.path.isfile(os.path.join(mask_dir, f))])
         
         crack_list = sorted([os.path.join(patch_dir, f) 
                              for f in os.listdir(patch_dir) if
@@ -232,56 +235,135 @@ class Inference():
         defect_list = sorted([os.path.join(defect_dir, f) 
                              for f in os.listdir(defect_dir)])
 
+        if merge:
+            mask_list = sorted([os.path.join(mask_dir, f) 
+                           for f in os.listdir(mask_dir) if
+                           os.path.isfile(os.path.join(mask_dir, f))])
 
-        for raw_img, patch_img, defect_img in zip(mask_list, crack_list, defect_list):
+            for raw_img, patch_img, defect_img in tqdm(zip(mask_list, crack_list, defect_list), total=len(mask_list)):
+                
+                name1 = os.path.split(patch_img)[-1].replace('png', 'JPG')
+                name2 = os.path.split(defect_img)[-1].replace('png', 'JPG')
+                #print(name1, name2)
+                
+                background = cv2.imread(raw_img)
+                overlay_patch = cv2.imread(patch_img)
+                overlay_defect = cv2.imread(defect_img)
+                
+                if np.count_nonzero(overlay_patch) != 0:
+                    added_img_patch = cv2.addWeighted(background,0.9,overlay_patch,0.7,0)
+                    cv2.imwrite(os.path.join(output_dir, name1), added_img_patch)
+                if np.count_nonzero(overlay_defect) != 0:
+                    added_img_defect = cv2.addWeighted(background,0.9,overlay_defect,0.8,0)
+                    cv2.imwrite(os.path.join(output_dir, name2), added_img_defect) 
+        else:
+            for patch_img, defect_img in zip(crack_list, defect_list):
+                
+                name1 = os.path.split(patch_img)[-1]
+                name2 = os.path.split(defect_img)[-1]
+                #print(name1, name2)
+                overlay_patch = cv2.imread(patch_img)
+                overlay_defect = cv2.imread(defect_img)
+                
+                if np.count_nonzero(overlay_patch) != 0:
+                    dest1 = os.path.join(output_dir, name1)
+                    cv2.imwrite(dest1, overlay_patch)
+                if np.count_nonzero(overlay_defect) != 0:
+                    dest2 = os.path.join(output_dir, name2)
+                    cv2.imwrite(dest2, overlay_defect)
+                
+
+    @staticmethod
+    def get_facadeID(path):
+        regex = re.compile(r'(\d+)$')
+        facadeID = regex.findall(path)
+        return facadeID[0]
+               
+    def report(self, csv_path=None):
+
+        if csv_path is None:
+            csv_path = os.path.join(self.output_dir, 'report.csv')
+        csv_data_w = []
+        total_raw=total_C=total_R=total_S=total_E=total_severe=0
+
+        for facade_no in self.facade_list:
+
+            folder = os.path.join(self.output_dir, 'facade'+facade_no)
+            r_csv_path = [os.path.join(folder,f) for f in os.listdir(folder) if f.endswith('.csv')][0]
+            csv_data = list(csv.DictReader(open(r_csv_path)))
+            raw_imgs = len(csv_data)
+            defect_imgs = []
+            for defect in ['crack', 'spalling', 'discolouration', 'metalCorrosion']:
+                no_imgs = len([item['name'] for item in csv_data if item[defect].lower()=='true'])
+                defect_imgs.append(no_imgs)
+
+            severe_list = [[(k,v) for k,v in item.items() if k.endswith('Severity') and item[k]=='Require Repair'] \
+                            for item in csv_data]
+            severe_imgs = sum(len(item)>0 for item in severe_list)
+
+            row_data = {'facade_no': facade_no, 'raw images': raw_imgs, 'images with crack':defect_imgs[0], 'images with spalling':defect_imgs[1], 
+                        'images with efflorescence':defect_imgs[2], 'images with rust':defect_imgs[3], 'images with severe defects': severe_imgs}
             
-            name1 = os.path.split(patch_img)[-1]
-            name2 = os.path.split(defect_img)[-1]
+            csv_data_w.append(row_data)
+
+            total_raw += raw_imgs
+            total_C += defect_imgs[0]
+            total_E += defect_imgs[1]
+            total_S += defect_imgs[2]
+            total_R += defect_imgs[3]     
+            total_severe += severe_imgs   
             
-            background = cv2.imread(raw_img)
-            overlay_patch = cv2.imread(patch_img)
-            overlay_defect = cv2.imread(defect_img)
-            
-            added_img_patch = cv2.addWeighted(background,0.9,overlay_patch,0.7,0)
-            added_img_defect = cv2.addWeighted(background,0.9,overlay_defect,0.8,0)
-            
-            cv2.imwrite(os.path.join(output_dir, name1), added_img_patch)
-            cv2.imwrite(os.path.join(output_dir, name2), added_img_defect)   
-    
+        csv_data_w.append({'facade_no': 'Total', 'raw images': total_raw, 'images with crack':total_C, 
+                        'images with spalling':total_S, 'images with efflorescence':total_E, 
+                        'images with rust':total_R, 'images with severe defects': total_severe})
+
+        header = ['facade_no', 'raw images', 'images with crack', 'images with spalling', 
+                    'images with efflorescence', 'images with rust', 'images with severe defects']
+
+        with open(csv_path, 'w', newline='') as f:
+            dict_writer = csv.DictWriter(f, header)
+            dict_writer.writeheader()
+            dict_writer.writerows(csv_data_w)
     
     def run(self):
-        
-        for i in range(self.facade_no):
-            input_dir = self.facade_input_dirs[i]
-            output_dir = self.facade_input_dirs[i].replace('img_m210rtkv2_x7', 'all_results')
+
+        for facade_no in self.facade_list:
+            output_dir = os.path.join(self.output_dir, 'facade'+facade_no)
+            input_dir = os.path.join(self.input_dir, 'facade'+facade_no)
             masked_dir = self.semantic_seg(input_dir, output_dir)
-            patch_dir = self.classification(input_dir, output_dir, i+1)
+            patch_dir = self.classification(input_dir, output_dir, int(facade_no))
             defect_dir = self.defect_seg(input_dir, output_dir)
 
             #get defect severity
             defect_output = self.severity(defect_dir, crack=False, pixel_mm=None, critical_area=None)
-            patch_name = "BuildingId_{}_FacadeId_{}_FlightId_{}".format(self.building_ID, i+1, self.flight_ID)
+            patch_name = "BuildingId_{}_FacadeId_{}_FlightId_{}".format(self.building_ID, int(facade_no), self.flight_ID)
             #overlay masked image and model outputs
             patch_dir = os.path.join(patch_dir, patch_name)
-            self.overlay(masked_dir, patch_dir, defect_dir, output_dir+'/overlay/')
+            self.overlay(masked_dir, patch_dir, defect_dir, output_dir+'/overlay/', merge=True)
             csv_data = self.update_csv(defect_output, output_dir)
-            break
+        self.report()
+
         return csv_data
 
-        
 if __name__ == '__main__':
-    ml_inputs = {}
-    ml_inputs['input_dir'] = '/home/paul/Workspaces/python/Drone_io_pipeline-main/test_preprocess/102030_288G_bishanroad3/inspect1/results/img_m210rtkv2_x7/'
-    ml_inputs['output_dir'] = '/home/paul/Workspaces/python/Drone_io_pipeline-main/test_preprocess/102030_288G_bishanroad3/inspect1/results/all_results/'
-    ml_inputs['building'] = '288'
-    ml_inputs['flight'] = '1'
-    
+    facade_list = ["13"]
+    #facade_list = [str(i) for i in range(1, 15)]
+    ml_inputs = {'building': '10', 'flight': '1', 'input_dir': '/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/CE5807/raw/', 
+    'output_dir': "/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/CE5807/results/", 
+    'facade_list':facade_list}
     inference = Inference(ml_inputs)
-    # inference.overlay(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/database_integration/test_uploading/119287_288_bishan/inspect1/results/all_results/facade1/semantic/MASKED',
-    #                   r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/database_integration/test_uploading/119287_288_bishan/inspect1/results/all_results/facade1/classification/BuildingId_288_FacadeId_1_FlightId_1',
-    #                   r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/database_integration/test_uploading/119287_288_bishan/inspect1/results/all_results/facade1/defect_seg',
-    #                   r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/database_integration/test_uploading/119287_288_bishan/inspect1/results/all_results/facade1/overlay')
-    # inference = Inference(ml_inputs)
-    #defect_output = inference.severity(r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/Inference_results/defect_seg')
-    #print(defect_output)
-    #inference.update_csv(defect_output, r'C:/Users/cryst/Work/Facade_inspection/pipeline_design/Drone_io_pipeline-main/test_severity/test_folder/Inference_results')
+    inference.run()
+
+    #mask_dir = ""
+    #result_dir = "/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/demo/results/"
+    #for facade_no in range(2,15):
+    #    facade_dir = os.path.join(result_dir, "facade"+str(facade_no))
+    #    patch_name = "BuildingId_{}_FacadeId_{}_FlightId_{}".format(10,facade_no,1)
+    #    patch_dir = os.path.join(facade_dir, "classification", patch_name)
+    #    defect_dir = os.path.join(facade_dir, "defect_seg")
+    #    output_dir = os.path.join(facade_dir, "overlay")
+    #    shutil.rmtree(output_dir)
+    #    os.mkdir(output_dir)
+    #    inference.overlay(mask_dir, patch_dir, defect_dir, output_dir, merge=False)
+
+        

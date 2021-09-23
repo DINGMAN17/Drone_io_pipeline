@@ -7,18 +7,17 @@ Created on Tue Apr 13 17:36:57 2021
 
 import os
 import csv
-import time
 import shutil
 from tqdm import tqdm
 from PIL import Image
 from utils import create_dirs, rename_dir
+from thermal_pipeline import Thermal_pipeline
 
-#TODO: add IR & RGB folders under each facade folder
-
+#TODO: check and add handheld thermal images
 class Preprocess:
 #name,inspection_no,facade_no, 
 	
-	def __init__(self,name,inspection_no,buildingID,frequency=[1,2,3],
+	def __init__(self,name,inspection_no,buildingID,root=None, frequency=[3],
 				  handheld=True, thermal=False):
 		'''
 		Initiating the class by creating all the necessary folders
@@ -29,9 +28,8 @@ class Preprocess:
 		inspection_no : str
 		facade_no : int, total number of facades
 		handheld : list of 2, 1st item: drone images path; 2nd item: handheld images path
-		'''
-		
-		self.root = r'/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset'
+		'''	
+		self.root = root
 		self.name = name
 		self.inspect_no = 'inspect'+inspection_no
 		self.frequency = frequency
@@ -89,15 +87,15 @@ class Preprocess:
 		others_sub_dirs = ['raw', 'raw_SD'] #may add more sub folders later on
 		create_dirs(others_sub_dirs, self.others_dir)
 				
-		results_sub_dirs = ['all_results', 'img_m210rtkv2_x7', 'all_results_handheld_rgb',
+		results_sub_dirs = ['all_results_drone_rgb', 'img_drone_rgb', 'all_results_handheld_rgb',
 						  'img_handheld_rgb']
 		self.result_dir = os.path.join(inspect_dir, 'results')
 		create_dirs(results_sub_dirs, self.result_dir)
 		
 		self.facade_drone_dirs = ['facade'+str(i) for i in self.facade_list_drone]
-		self.facade_dir_process = os.path.join(self.result_dir, 'img_m210rtkv2_x7')		
+		self.facade_dir_process = os.path.join(self.result_dir, 'img_drone_rgb')		
 		self.facade_dir_raw = os.path.join(self.others_dir, 'raw')
-		self.facade_result = os.path.join(self.result_dir, 'all_results')
+		self.facade_result = os.path.join(self.result_dir, 'all_results_drone_rgb')
 		if self.handheld:
 			self.facade_hhl_dirs = ['facade'+str(i) for i in self.facade_list_handheld]
 			self.facade_dir_handheld = os.path.join(self.result_dir, 'img_handheld_rgb')
@@ -119,8 +117,28 @@ class Preprocess:
 			overlay_dir = os.path.join(self.facade_result, facade_dir, 'overlay')
 			if not os.path.exists(overlay_dir):
 				os.mkdir(overlay_dir)
+
+		if not self.thermal:
+			thermal_dirs = ['rgb']
+		else:
+			thermal_dirs = ['ir', 'rgb']
+
+		for facade_dir in self.facade_drone_dirs:
+			parent_dir = os.path.join(self.facade_dir_raw, facade_dir)
+			raw_dir = os.path.join(self.others_dir, 'raw_SD')
+			create_dirs(thermal_dirs, parent_dir)
+			create_dirs(thermal_dirs, raw_dir)
+	
+		if self.thermal:
+			result_dirs = ['all_results_handheld_ir', 'all_results_drone_ir', 
+						  'img_drone_ir', 'img_handheld_ir']
+			create_dirs(result_dirs, self.result_dir)
+			for name in ['all_results_drone_ir', 'img_drone_ir']:
+				folder = os.path.join(self.result_dir, name)
+				create_dirs(self.facade_drone_dirs, folder)
+			
 		
-	def combine_dirs(self):
+	def combine_dirs(self, thermal=False):
 		'''
 		combine multiple folders from SD card, rename the image files starting 
 		from DJI_0001, only for drone images
@@ -130,16 +148,22 @@ class Preprocess:
 		subdirs = [x[0] for x in os.walk(self.input_drone)][1:]
 
 		for img_dir in sorted(subdirs):            
-
-			img_list = sorted([os.path.join(img_dir,f) for f in os.listdir(img_dir)
-							 if os.path.isfile(os.path.join(img_dir, f))])
+			if not thermal:
+				img_list = sorted([os.path.join(img_dir,f) for f in os.listdir(img_dir)
+							 if 'R' not in f])
+			else:
+				img_list = sorted([os.path.join(img_dir,f) for f in os.listdir(img_dir)
+							 if 'R' in f])
 			num = len(img_list)
 			
 			start_no = total_no
 			for img in img_list:
-
-				name = 'DJI_'+str(start_no).zfill(4)+os.path.splitext(img)[-1]				
-				dest = os.path.join(self.others_dir, 'raw_SD', name)
+				if not thermal:
+					name = 'DJI_'+str(start_no).zfill(4)+os.path.splitext(img)[-1]				
+					dest = os.path.join(self.others_dir, 'raw_SD', 'rgb', name)
+				else:
+					name = 'DJI_'+str(start_no).zfill(4)+'_R'+os.path.splitext(img)[-1]
+					dest = os.path.join(self.others_dir, 'raw_SD', 'ir', name)
 				start_no += 1
 				shutil.copy(img, dest)
 				shutil.copystat(img, dest)
@@ -150,13 +174,18 @@ class Preprocess:
 		return Image.open(img).getexif()[36867]
 
 #TODO: decide where to put the timesheet csv & input folder
-	def allocate_imgs(self, time_data, facade_list, folder=None, drone=True):
+	def allocate_imgs(self, time_data, facade_list, folder=None, drone=True,
+				   thermal=False):
 		'''
 		allocate images to the respective facade folder, based on timesheet
 		'''
+
 		if folder is None:
 			if drone:
-				folder = os.path.join(self.others_dir, 'raw_SD')
+				if not thermal:
+					folder = os.path.join(self.others_dir, 'raw_SD', 'rgb')
+				else:
+					folder = os.path.join(self.others_dir, 'raw_SD', 'ir')
 			else:
 				folder = self.input_handheld
 		
@@ -190,44 +219,53 @@ class Preprocess:
 		for i in tqdm(range(len(idx_list))):
 			name = os.path.split(img_list[i])[-1]
 			if drone:
-				dest = os.path.join(self.facade_dir_raw, idx_list[i][0], name)	
-				#dest = os.path.join('/home/paul/Workspaces/python/Drone_io_pipeline-main/real_dataset/288G_1/inspect1/img_m210rtkv2_x7_others/raw', \
-				#		 idx_list[i][0], name)	
+				if not thermal:
+					dest = os.path.join(self.facade_dir_raw,idx_list[i][0],'rgb',name)	
+				else:
+					dest = os.path.join(self.facade_dir_raw,idx_list[i][0],'ir',name)	
+				
 			else:
 				dest = os.path.join(self.facade_dir_handheld, idx_list[i][0], name)
+			
 			shutil.copy(img_list[i], dest)
 			shutil.copystat(img_list[i], dest)
-
-			
-	def rename_facade_dirs(self, drone=True):
+		
+	def rename_facade_dirs(self, drone=True, thermal=False):
 		'''
 		rename images for all the facade folders
 		'''
 		if drone:
 			for facade in self.facade_drone_dirs:
-				facade_dir = os.path.join(self.facade_dir_raw, facade)
-				rename_dir(facade_dir)
+				if not thermal:
+					facade_dir = os.path.join(self.facade_dir_raw, facade, 'rgb')
+					rename_dir(facade_dir)
+				else:
+					facade_dir = os.path.join(self.facade_dir_raw, facade, 'ir')
+					rename_dir(facade_dir, thermal=True)
 		else:
 			for facade in self.facade_hhl_dirs:
 				facade_dir = os.path.join(self.facade_dir_handheld, facade)
 				rename_dir(facade_dir, drone=False)
 			
-	def filter_overlap(self):
+	def filter_overlap(self, thermal=False):
 		'''
 		filter out overlapped images based on the frequency defined
 		Parameters
 		----------
 		frequency : list, optional
 			DESCRIPTION. The default is 3.
-
 		'''
 		idx = 0
 		if len(self.frequency)==1:
 			self.frequency = self.frequency * len(self.facade_drone_dirs)
 		for facade_dir in self.facade_drone_dirs:
 			#create folder to store filtered images inside each facade folder
-			facade_dir = os.path.join(self.facade_dir_raw, facade_dir)
-			filtered_dir = os.path.join(self.facade_dir_raw, facade_dir, 'filtered')
+			if not thermal:
+				facade_dir = os.path.join(self.facade_dir_raw, facade_dir, 'rgb')
+			else:
+				facade_dir = os.path.join(self.facade_dir_raw, facade_dir, 'ir')
+			
+			filtered_dir = os.path.join(facade_dir, 'filtered')
 			if not os.path.exists(filtered_dir):
 				os.mkdir(filtered_dir)
 			
@@ -248,11 +286,12 @@ class Preprocess:
 							shutil.move(img, dest)
 			idx += 1
 	
-			
+#TODO: Add Jiamin's code 			
 	def extract_distance(self):
 		pass
-							
-	def process_ready(self, drone=True):
+
+#TODO: decide output for ML pipeline (considering thermal images)	
+	def process_ready(self, drone=True, thermal=False):
 		'''
 		get ready to feed images to inference pipeline
 		- copy image to the folder that is ready for processing
@@ -260,32 +299,58 @@ class Preprocess:
 		'''
 		#copy image to the folder
 		if drone:
-			for facade_dir in self.facade_drone_dirs:
-				  facade_raw_dir = os.path.join(self.facade_dir_raw, facade_dir)
-				  facade_new_dir = os.path.join(self.facade_dir_process, facade_dir)
-				 
-				  img_list = [os.path.join(facade_raw_dir, f) for f in os.listdir(facade_raw_dir) 
+			if thermal:
+				thermal_pipeline = Thermal_pipeline(None, None, None)
+
+			for facade_dir in tqdm(self.facade_drone_dirs):
+				if not thermal:
+					facade_raw_dir = os.path.join(self.facade_dir_raw, facade_dir, 'rgb')
+					facade_new_dir = os.path.join(self.facade_dir_process, facade_dir)
+					img_list = [os.path.join(facade_raw_dir, f) for f in os.listdir(facade_raw_dir) 
 							  if os.path.isfile(os.path.join(facade_raw_dir, f))]
-				  for img in img_list:
-					  dest = os.path.join(facade_new_dir, os.path.split(img)[-1])
-					  shutil.copy(img, dest)
-					  shutil.copystat(img, dest)
+					for img in img_list:
+						dest = os.path.join(facade_new_dir, os.path.split(img)[-1])
+						shutil.copy(img, dest)
+						shutil.copystat(img, dest)
+				else:
+					#un-distort the rgb image first
+					input_folder = os.path.join(self.facade_dir_raw, facade_dir, 'rgb')					
+					output_folder = os.path.join(self.result_dir, 'img_drone_rgb', facade_dir)
+					thermal_pipeline.un_distort(input_folder, output_folder)
+					ir_folder = os.path.join(self.facade_dir_raw, facade_dir, 'ir')
+					img_list = [os.path.join(ir_folder, f) for f in os.listdir(ir_folder) 
+							  if os.path.isfile(os.path.join(ir_folder, f))]
+					ir_dest_dir = os.path.join(self.result_dir, 'img_drone_ir', facade_dir)
+					for img in img_list:
+						dest = os.path.join(ir_dest_dir, os.path.split(img)[-1])
+						shutil.copy(img, dest)
+						shutil.copystat(img, dest)
+
 		#get inputs for ML models
 		ml_inputs = {}
 		upload_inputs = {}
+		thermal_inputs = {}
 		
 		ml_inputs['building'] = upload_inputs['building'] = self.buildingID
 		ml_inputs['flight'] = upload_inputs['flight'] = self.inspect_no[7:]
 		if drone:
 			ml_inputs['input_dir'] = upload_inputs['raw_dir'] = self.facade_dir_process
-			ml_inputs['output_dir'] = upload_inputs['result_dir'] = os.path.join(self.result_dir,'all_results')
+			ml_inputs['output_dir'] = upload_inputs['result_dir'] = os.path.join(self.result_dir,'all_results_drone_rgb')
 			upload_inputs['facade_no'] = self.facade_drone_dirs
+			if thermal:
+				thermal_inputs['input'] = self.result_dir
+				thermal_inputs['output'] = os.path.join(self.result_dir,'all_results_drone_ir')
+				thermal_inputs['facade_no'] = self.facade_drone_dirs
+				
 		else:
 			ml_inputs['input_dir'] = upload_inputs['raw_dir'] = self.facade_dir_handheld
 			ml_inputs['output_dir'] = upload_inputs['result_dir'] = self.facade_result_handheld
 			upload_inputs['facade_no'] = self.facade_hhl_dirs
 
-		return ml_inputs, upload_inputs
+		if os.path.isdir(os.path.join(self.others_dir, 'raw_SD')):
+			shutil.rmtree(os.path.join(self.others_dir, 'raw_SD'))
+		return ml_inputs, thermal_inputs, upload_inputs
+		
 
 				 
 	def run(self):      
@@ -298,23 +363,41 @@ class Preprocess:
 		self.allocate_imgs(time_data_drone, facade_list_drone)
 		self.rename_facade_dirs()
 		self.filter_overlap()
-		ml_inputs_drone, upload_inputs_drone = self.process_ready()
+		
+		if self.thermal:
+			self.combine_dirs(True)
+			self.allocate_imgs(time_data_drone, facade_list_drone, thermal=True)
+			self.rename_facade_dirs(thermal=True)
+			self.filter_overlap(thermal=True)
+			ml_inputs, thermal_inputs, upload_inputs = self.process_ready(thermal=True)
+		else:
+			ml_inputs, thermal_inputs, upload_inputs = self.process_ready()
+
 		if self.handheld:
 			self.allocate_imgs(time_data_handheld, facade_list_handheld, drone=False)
 			self.rename_facade_dirs(False)
-			ml_inputs_hhl, upload_inputs_hhl = self.process_ready(False)
-
-			return ml_inputs_drone, ml_inputs_hhl, upload_inputs_drone, upload_inputs_hhl
-		
-		return ml_inputs_drone, upload_inputs_drone
-				 
-				
+			ml_inputs_hhl, _, upload_inputs_hhl = self.process_ready(drone=False)
+			return ml_inputs, thermal_inputs, upload_inputs, ml_inputs_hhl, upload_inputs_hhl
+	
+		return ml_inputs, thermal_inputs, upload_inputs
+								
 if __name__ == '__main__':
-	preprocess = Preprocess('288G_1', '1', '5', [2], handheld=True)
-	ml_inputs_drone, ml_inputs_hhl, upload_inputs_drone, upload_inputs_hhl = preprocess.run()
-	print(ml_inputs_drone)
+	thermal = True
+	handheld = True
+	inspection_no = '1'
+	buildingID = '5'
+	name = 'bishan'
+	preprocess = Preprocess(name, inspection_no, buildingID, frequency=[2], handheld=handheld, thermal=thermal)
+	ml_inputs, thermal_inputs, upload_inputs, ml_inputs_hhl, upload_inputs_hhl = preprocess.run()
+
+	print(ml_inputs)
+	print('------------------------------')
+	print(thermal_inputs)
+	print('------------------------------')
+	print(upload_inputs)
+	print("------------------------------")
 	print(ml_inputs_hhl)
-	print(upload_inputs_drone)
+	print("-------------------------------")
 	print(upload_inputs_hhl)
 	
 	
